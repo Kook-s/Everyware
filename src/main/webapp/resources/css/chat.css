@@ -1,0 +1,382 @@
+@charset "UTF-8";
+.chatroom_header_name{
+	margin-left:25px;
+}
+.my-swal {
+  z-index: 99999;
+}
+.chatroom_profile {
+	display: flex;
+	flex-wrap: wrap;
+	width: 60px;
+	height: 44px;
+	border: 1px solid white;
+	border-radius: 4px
+}
+#messenger{
+	z-index: 1038;
+	position: fixed;
+}
+.chatroom_profile_element {
+	flex: 1;
+	display: flex;
+	margin: 1px;
+	justify-content: center; /* 수평 가운데 정렬 */
+	align-items: center; /* 수직 가운데 정렬 */
+}
+
+.chatroom_profile_img {
+	display: inline-block;
+	width: 24px;
+    height: 24px;
+	border-radius: 6px;
+}
+
+.chatroom_profile_two {
+	position: relative;
+	width: 64px;
+}
+
+.chatroom_profile_two img {
+	width: 23px;
+	height: 23px;
+}
+
+.chatroom_profile_img_two {
+	position: absolute;
+	left: 23px;
+	top: 23px;
+	width: 30px !important;
+	height: 30px !important;
+}
+
+.chatroom_profile_img_one {
+	left: 6px; position : absolute;
+	width: 30px !important;
+	height: 30px !important;
+	position: absolute;
+}
+
+.chatroom_profile_only img {
+	height: 45px;
+	width: 45px;
+}
+.chatroom_profile_only {
+	width: 61px;
+}
+.chat_switch {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 9999;
+}
+
+.on_profile_list {
+	flex: 1;
+	text-align: center;
+	height: 40px;
+}
+
+.on_chatroom_list {
+	flex: 1;
+	text-align: center;
+	height: 40px;
+}
+
+.profileList {
+	height: 100%;
+	position: relative;
+}
+
+.on {
+	color: red;
+}
+
+#chatroom_list {
+	transform: translateX(500px);
+	transition: 0.36s ease;
+	display: none;
+}
+
+#chatprofile_list {
+	transition: 0.36s ease;
+	overflow-x: hidden!important;
+	-ms-overflow-style:none;
+
+}
+#chatprofile_list::-webkit-scrollbar { display:none; }
+.chatrooms {
+	display: flex;
+	padding: 5px;
+}
+
+.chatroom_name h6 {
+	margin: 0;
+}
+
+.chatroom_name p {
+	font-size: 12px;
+	margin: 0;
+}
+
+.chatroom_name {
+	margin-left: 10px;
+}
+
+.chatroom_profile_three {
+	position: relative;
+	width: 60px;
+}
+
+.chatroom_profile_three img {
+	width: 27px;
+	height: 27px;
+}
+
+.chatroom_profile_img_1 {
+	position: absolute;
+	left: 4px;
+}
+
+.chatroom_profile_img_2 {
+	position: absolute;
+	left: 28px;
+	top: 15px;
+}
+
+.chatroom_profile_img_3 {
+	position: absolute;
+	top: 29px;
+	left: 10px;
+}
+.left_content{
+	height: 650px;
+    margin: 0 !important;
+}
+.right_content{
+	height: 650px;
+}
+#createRoomBtn{
+	width: 25px;
+    height: 25px;
+    position: absolute;
+    background-image: url(/resources/img/chatbubbles-outline.svg);
+    background-repeat: no-repeat;
+    left: 265px;
+    top: 60px;
+    padding-left: 1px;
+    z-index: 9999;
+}
+.searchForm{
+	padding: 1.0rem !important;
+	padding-bottom: 2.0rem !important;
+	border-bottom: 1px rgb(230,230,230) solid;
+	background:white;
+	z-index:9999;
+}
+#search_list{
+	position: absolute;
+	transform: translateY(-1000px);
+	transition: 0.36s ease;
+	height: 100%;
+	width: 306px;
+	background: aliceblue;
+	overflow-x: hidden!important;
+	-ms-overflow-style:none;
+}
+#search_list::-webkit-scrollbar { display:none; }
+.empcheck{
+	display: none;
+}
+#selected_search_list{
+	list-style: none;
+	display: inline-block;
+	flex: 5;
+}
+#selected_search_list li{
+	display: inline-block;
+	float: left;
+	display: flex;
+	flex-direction: column;
+	font-size: 10px; 
+	margin: 0px 4px;
+}
+.added_profile_img{
+	width: 28px;
+	height: 28px;
+	border-radius: 100%;
+}
+#selected_search_list{
+	padding: 0 15px;
+}
+#search_list .chat_profile{
+	padding-left: 17px;
+}
+#chatprofile_list .chat_profile{
+	padding-left: 17px;
+}
+#selected_div{
+	display: flex;
+	justify-content: space-between;
+}
+#create_btn_and_count{
+	justify-content: flex-start;
+	display:flex;
+	flex-direction: column;
+	flex: 1;	
+}
+.chatroom_header{
+	height: 84px;
+}
+.chatroom_header_profile_img{
+	height: 50px;
+	width: 50px;
+	border: none;
+}
+
+.chatroom_profile_three.chatroom_header_profile_img .chatroom_profile_img_1{
+	left: 3px;
+    top: -1px;
+}
+.chatroom_profile_three.chatroom_header_profile_img .chatroom_profile_img_2{
+    top: 9px;
+}
+.chatroom_profile_three.chatroom_header_profile_img .chatroom_profile_img_3{
+    top: 23px;
+}
+.chatroom_header_profile_img .chatroom_profile_img_four{
+	width:21px;
+	height: 21px;
+}
+.chatroom_header_profile_img .chatroom_profile_img_one{
+	top:0px;
+}
+.chatroom_header_profile_img .chatroom_profile_img_two{
+	top: 18px;
+}
+.chat_message_profile_img{
+	width: 50px;
+	height: 50px;
+	border-radius: 100%;
+	display: block;
+	margin: auto;
+}
+.chat_message_profile{
+	padding: 3px;
+}
+.chat_message_img{
+	width: 180px;
+}
+.chat_message_img img{
+	width: 100%;
+	height: auto;
+}
+.chat_message_name{
+	font-size: 12px;
+    text-align: center;
+}
+.profile_col{
+	padding: 0;
+    width: 11.666667%;
+}
+.icon_schedule{
+	margin-left: 4px;
+}
+.unreadCount{
+	margin: 0 4px;
+}
+.others_time{
+	margin-right: 4px;
+}
+.chatroom_date{
+	margin-bottom: 10px;
+}
+.custom_max_width{
+	max-width: 88%;
+}
+.online {
+    color: #86c541;
+}
+.offline {
+    color: #e47297;
+}
+.chatroom_name_info{
+	color: black;
+	font-size: 14px
+}
+.chatroom_last_date{
+	font-size: 10px;
+}
+.chatroom_last_message{
+	font-size: 11px;
+}
+.chatroom_unread_count{
+	border-radius: 100%;
+	background: #ec407a;
+	color: white;
+	text-align: center;
+	font-size: 10px;
+    padding: 2px 6px;
+    position: absolute;
+    z-index: 999;
+    left: 57px;
+    display: none;
+}
+.chatroom_unread_count_active{
+	display: block;
+}
+#image_send_btn{
+	width: 30px;
+    height: 30px;
+    background-image: url(/resources/img/fileSend.svg);
+    background-repeat: no-repeat;
+    position: absolute;
+    left: 490px;
+    top: 7px;
+    z-index: 9999;
+}
+.pre_img{
+	padding: 20px;
+    border: 1px rgb(230,230,230) solid;;
+    position: absolute;
+    text-align: center;
+    bottom: 91px;
+    display: none;
+    background: white;
+}
+.pre_img img{
+	height: 180px;
+	width: auto;
+}
+#fileSelector{
+	display: none;
+}
+#messenger{
+	width:950px;
+	display: none;
+}
+.chat_profile img{
+	width: 50px;
+    height: 50px;
+    border-radius: 100%;
+    margin-right: 8px;
+}
+#create_room_btn{
+	    font-size: 12px;
+    padding: 4px 8px;
+}
+ion-icon[name=time-outline] {
+   margin-bottom: 3px;
+}
+.myMessage ion-icon[name=time-outline] {
+   margin-left: 5px;
+}
+.profile_div{
+	flex: 1;	
+}
+.profile_element{
+	display: block;
+}
+.selected_count{
+	text-align: center;
+}
