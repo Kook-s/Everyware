@@ -6,9 +6,11 @@
   <br>
 
 # 💻 프로젝트
-그룹웨어를 주제로한 EveryWare는 사용하는 환경마다 필요한 기능과 그렇지 않은 기능을 사용자 환경에 
-커스텀하여 사용자 경험을 높이기 위해서 제작되었습니다. 
-사원, 관리자 친화적 중심으로 진행 되었습니다.
+EveryWare는 기업 내 협업과 업무 효율을 극대화하기 위해 개발된 통합 그룹웨어 플랫폼입니다.
+사용자의 역할(사원, 관리자, 외부 협력자 등)과 조직 환경에 따라 기능을 유연하게 커스터마이징할 수 있어, 각기 다른 업무 흐름에 최적화된 경험을 제공합니다.
+
+기능별 모듈은 독립성과 확장성을 고려하여 설계되었고, 관리자와 일반 사용자가 각자의 권한에 맞는 기능만 사용할 수 있도록 접근 제어가 적용되어 있습니다.
+또한, 직관적인 화면 구성과 쉬운 사용성을 통해 빠른 적응과 높은 업무 몰입을 지원하며, 유지보수성과 향후 기능 확장까지 고려한 구조로 구현되었습니다.
 <br>
 
 # 🚀 팀원 역할
@@ -27,7 +29,7 @@
     <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=JavaScript&logoColor=ffffff"/>
 <br>
     <img src="https://img.shields.io/badge/Oracle-F80000?style=flat-square&logo=Oracle&logoColor=white"/>
-    <img src="https://img.shields.io/badge/Tomcat-FCC624?style=for-the-badge&logo=apachetomcat&logoColor=white"/>
+    <img src="https://img.shields.io/badge/Tomcat-FCC624?style=flat-square&logo=apachetomcat&logoColor=white"/>
     <img src="https://img.shields.io/badge/jQuery-0769AD?style=flat-square&logo=jQuery&logoColor=white"/> 
     <img src="https://img.shields.io/badge/subversion-809CC9?style=flat-square&logo=subversion&logoColor=ffffff"/> 
 </div>
@@ -36,21 +38,86 @@
 # 🏛️ Architecture
 ![3-Tire-Architecture](https://github.com/Kook-s/Everyware/blob/main/doc/3-Tire-Architecture.png)
 <br>
+### 패키지 구조
+```
+├── java
+│   └── kr
+│       └── or
+│           └── everyware
+│              ├── admin
+│              ├── everysolution
+│              ├── everyware
+│              ├── login
+│              ├── security
+│              ├── test
+│              └── util
+├── resources
+│   ├── META-INF
+│   ├── log4j.xml
+│   └── sqlmap
+│       ├── admin
+│       ├── alarm
+│       ├── blank_SQL.xml
+│       ├── board
+│       ├── calendar
+│       ├── calendar_ad
+│       ├── chat
+│       ├── chat_ad
+│       ├── cloud
+│       ├── cmnt
+│       ├── contact
+│       ├── document
+│       ├── everysolution
+│       ├── facility
+│       ├── fileattachment
+│       ├── fingerhr
+│       ├── login
+│       ├── mail
+│       ├── mail_ad
+│       ├── mypage
+│       ├── suvy
+│       ├── todo
+│       ├── vacation
+│       ├── work
+│       ├── workGroup
+│       └── workYear
+└── webapp
+    ├── WEB-INF
+    │   ├── classes
+    │   ├── mybatisAlias
+    │   ├── spring
+    │   ├── views
+    │   └── web.xml
+    └── resources
+        ├── assets
+        ├── bootstrap
+        ├── ckeditor
+        ├── css
+        ├── img
+        ├── js
+        ├── jstree
+        └── video
+```
+
 
 # 🗓️ 개발 기간 및 작업 시간
-|          |   6월   |     |     |     | 7월 |||     | 8월 |     |     |    |
-|:---------|:------:|:---:|:---:|:---:|:----:|:----:|:----:|:---:|:----:|:---:|:---:|:--:|
-| 주차       |  1주차   | 2주차 | 3주차 | 4주차 | 1주차 | 2주차 | 3주차 | 4주차 | 1주차 | 2주차 | 3주차 | 4주차 |
-| 수행 계획서   |   ✅    |  ✅  |     |     |    |     |     |     |    |     |     |    ||
-| 요구사항 정의  |   ✅    |  ✅  |  ✅  |     |    |     |     |     |    |     |     ||
-| 테이블 설계   |        |  ✅  |  ✅  |  ✅  |    |     |     |     |    |     |     ||
-| 화면 설계    |        |     |     |  ✅  | ✅   |     |     |     |    |     |     ||
-| 기능 개발    |        |     |     |     | ✅   |  ✅   |  ✅   |  ✅  | ✅   |     |     |    |
-| 테스트      |        |     |     |     |    |     |     |     |  ✅  |  ✅  |     |    |
+| 2023    |   6월   |     |     |     | 7월 |||     | 8월 |     |     |    |
+|:--------|:------:|:---:|:---:|:---:|:----:|:----:|:----:|:---:|:----:|:---:|:---:|:--:|
+| 주차      |  1주차   | 2주차 | 3주차 | 4주차 | 1주차 | 2주차 | 3주차 | 4주차 | 1주차 | 2주차 | 3주차 | 4주차 |
+| 수행 계획서  |   ✅    |  ✅  |     |     |    |     |     |     |    |     |     |    ||
+| 요구사항 정의 |   ✅    |  ✅  |  ✅  |     |    |     |     |     |    |     |     ||
+| 테이블 설계  |        |  ✅  |  ✅  |  ✅  |    |     |     |     |    |     |     ||
+| 화면 설계   |        |     |     |  ✅  | ✅   |     |     |     |    |     |     ||
+| 기능 개발   |        |     |     |     | ✅   |  ✅   |  ✅   |  ✅  | ✅   |     |     |    |
+| 테스트     |        |     |     |     |    |     |     |     |  ✅  |  ✅  |     |    |
+<br>
 
+# ERD
+![3-Tire-Architecture](https://github.com/Kook-s/Everyware/blob/main/doc/ERD.png)
+<br>
 
-
-
+# 📑 Document
+### **[최종 산출물](https://github.com/Kook-s/Everyware/blob/main/doc/document)**
 
 
 
