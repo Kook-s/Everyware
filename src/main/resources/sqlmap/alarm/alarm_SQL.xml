@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.alarm.mapper.AlarmMapper">
+	<resultMap type="alarm" id="alarmMap">
+		<id property="alarmId" column="alarm_id"/>
+		<result property="alarmId" column="alarm_id"/>
+		<result property="sndrNm" column="sndr_nm"/>
+		<result property="alarmType" column="alarm_type"/>
+		<result property="urlAddr" column="url_addr"/>
+		<result property="crtDt" column="crt_dt"/>
+		<association property="sender" javaType="employee">
+			<result property="empName" column="sender_name"/>
+			<result property="empId" column="sender_id"/>
+			<result property="empProfile" column="sender_profile"/>
+		</association>
+	</resultMap>
+	
+	<select id="getAlarmList" parameterType="String" resultMap="alarmMap">
+		 select a.alarm_id,a.sndr_nm,a.alarm_type,a.url_addr,a.crt_dt,b.emp_id as sender_id,b.emp_name as sender_name,b.emp_id as sender_id, b.emp_profile as sender_profile from 
+        (select * from alarm
+         where emp_id=#{empId}) a 
+         left outer join employee b on(a.sndr_nm=b.emp_id and alarm_type=1)--여기에 보낸주체 프로필사진이나 정보를 나타내야하는 알람타입 추가
+		order by a.alarm_id desc
+	</select>
+	<insert id="insertAlarm" parameterType="alarm">
+		<selectKey keyProperty="alarmId" resultType="int" order="BEFORE">
+			select seq_alarm.nextval from dual
+		</selectKey>
+		insert into alarm values(
+			#{alarmId},#{sndrNm},#{alarmType},#{urlAddr},#{empId},sysdate
+		)
+	</insert>
+	<select id="selectEmployee" parameterType="String" resultType="employee">
+		select * from employee
+		where emp_id=#{empId} 
+	</select>
+	<select id="unreadMessageCount" parameterType="String" resultType="int">
+		select count(*)
+		from (select room_id,last_read_msg_id from chatroomuser
+		        where emp_id=#{empId} and exit_yn='N') a join chatroom b on(a.room_id=b.room_id)
+		        join message c on (b.room_Id=c.room_id and msg_id>a.last_read_msg_id)
+	</select>
+	<select id="LastMessageDate" parameterType="String" resultType="message">
+		
+		select msg_crt_dt 
+		from(
+		    select a.*, ROW_NUMBER() OVER (ORDER BY msg_crt_dt desc) AS rn 
+		    from
+		        (select *
+		            from (select room_id,last_read_msg_id from chatroomuser
+		                    where emp_id=#{empId} and exit_yn='N') a join chatroom b on(a.room_id=b.room_id)
+		                    join message c on (b.room_Id=c.room_id and msg_id>a.last_read_msg_id)
+		        ) a
+		)
+		where rn=1
+	</select>
+	<delete id="deleteAlarm" parameterType="int">
+		delete from alarm
+		where alarm_id=#{alarmId}
+	</delete>
+	<delete id="deleteAllAlarm" parameterType="String">
+		delete from alarm
+		where emp_id=#{empId}
+	</delete>
+	<select id="selectEmployeeListByDeptId" parameterType="int" resultType="employee">
+		select *
+		from employee
+		where dept_id = #{deptId}
+	</select>
+	<select id="selectEmployeeListByCustId" parameterType="String" resultType="employee">
+		select *
+		from employee
+		where cust_id = #{custId}
+	</select>
+</mapper>

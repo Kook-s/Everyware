@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.util.attachment.mapper.AttachMapper">
+	<select id="getCustFileSum" parameterType="String" resultType="Long">
+	SELECT NVL(SUM(file_sz) , 0)
+	FROM attach_file 
+	WHERE cust_id = #{custId} 
+	AND EXTRACT(MONTH FROM file_crt_dt) = EXTRACT(MONTH FROM SYSDATE)
+	</select>
+	<select id="getProductInfo" parameterType="String" resultType="Long">
+	select NVL(ordr_person* add_file_sz  , 0)
+	from
+		(SELECT *
+		FROM (
+		  SELECT *
+		  FROM order_product
+		  WHERE cust_id = #{custId}
+		  AND CURRENT_DATE BETWEEN ORDR_BGNG_DT AND ORDR_END_DT
+		  ORDER BY ordr_id DESC
+		) 
+		WHERE ROWNUM = 1) a join product b on(a.pdt_id = b.pdt_id)
+	</select>
+	
+</mapper>

@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.emp.mapper.AdminMapper">
+
+	<resultMap id="empList" type="employee">
+		<id property="empId" column="emp_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empPw" column="emp_pw"/>
+		<result property="empName" column="emp_name"/>
+		<result property="deptId" column="dept_id"/>
+		<result property="jbgdId" column="jbgd_id"/>
+		<result property="empBirth" column="emp_birth"/>
+		<result property="empTel" column="emp_tel"/>
+		<result property="empMail" column="emp_mail"/>
+		<result property="empPost" column="emp_post"/>
+		<result property="empAddr1" column="emp_addr1"/>
+		<result property="empAddr2" column="emp_addr2"/>
+		<result property="empDate" column="emp_date"/>
+		<result property="empIdno" column="emp_idno"/>
+		<result property="empVac" column="emp_vac"/>
+		<result property="empProfile" column="emp_profile"/>
+		<result property="groupNo" column="group_no"/>
+		<result property="custId" column="cust_id"/>
+		<result property="authrtId" column="authrt_id"/>
+
+		<association property="department" javaType="dept">
+			<result property="deptId" column="dept_id"/>
+			<result property="deptNm" column="dept_nm"/>
+			<result property="custId" column="cust_id"/>
+		</association>
+
+		<association property="position" javaType="posi">
+			<result property="jbgdId" column="jbgd_id"/>
+			<result property="jbgdNm" column="jbgd_nm"/>
+			<result property="custId" column="cust_id"/>
+		</association>
+
+	</resultMap>
+
+	<select id="getEmployee" parameterType="string" resultMap="empList">
+		SELECT *
+		FROM employee a, department b , position c
+		WHERE a.dept_id = b.dept_id
+		AND a.jbgd_id = c.jbgd_id
+		AND a.cust_id = #{custId}
+		order by a.emp_date desc
+	</select>
+
+	<select id="getDepartment" parameterType="string" resultType="dept">
+		SELECT
+			 dept_id
+			,dept_nm
+			,cust_id
+		FROM department
+		WHERE cust_id = #{custId}
+		ORDER BY dept_id asc
+	</select>
+	<insert id="addDepartment" parameterType="dept">
+		insert into department(
+			 dept_id
+			,dept_nm
+			,cust_id
+		)
+		VALUES(
+			 seq_department.nextval
+			,#{deptNm}
+			,#{custId}
+		)
+	</insert>
+	
+	<insert id="addPosition" parameterType="posi">
+		INSERT INTO position(
+			 jbgd_id
+			,jbgd_nm
+			,cust_id
+		)
+		VALUES(
+			 seq_position.nextval
+			,#{jbgdNm}
+			,#{custId}
+		)
+	</insert>
+	
+
+	<update id="editDepartment" parameterType="employee">
+		UPDATE employee
+		SET
+			dept_id = #{deptId}
+		WHERE emp_id = #{empId}
+	</update>
+
+	<select id="getPosition" parameterType="string" resultType="posi">
+		SELECT
+			 jbgd_id
+			,jbgd_nm
+			,cust_id
+		FROM position
+		WHERE cust_id = #{custId}
+		ORDER BY jbgd_id asc
+	</select>
+
+	<update id="editPosition" parameterType="employee">
+		UPDATE employee
+		SET
+		jbgd_id = #{jbgdId}
+		WHERE emp_id = #{empId}
+	</update>
+
+	<select id="getPopEmployee" parameterType="string" resultType="employee">
+		SELECT *
+		FROM employee
+		WHERE emp_id = #{empId}
+	</select>
+
+	<update id="editEmployee" parameterType="employee">
+		UPDATE employee
+		SET
+		<if test="empPw != null and empPw != ''">
+			emp_pw = #{empPw}
+		</if>
+		<if test="empTel != null and empTel != ''">
+			emp_tel = #{empTel}
+		</if>
+		<if test="empMail != null and empMail != ''">
+			emp_mail = #{empMail}
+		</if>
+		<if test="empPost != null and empPost != ''">
+			emp_post = #{empPost}
+		</if>
+		<if test="empAddr1 != null and empAddr1 != ''">
+			emp_addr1 = #{empAddr1}
+		</if>
+		<if test="empAddr2 != null and empAddr2 != ''">
+			emp_addr2 = #{empAddr2}
+		</if>
+		WHERE emp_id = #{empId}
+	</update>
+	
+	<delete id="delDepartment" parameterType="string">
+		DELETE 
+		FROM department
+		WHERE dept_id = #{deptId}
+	</delete>
+	
+	<delete id="delPosition" parameterType="string">
+		DELETE 
+		FROM position
+		WHERE jbgd_id = #{jbgdId}
+	</delete>
+
+	<insert id="addNewEmp" parameterType="employee">
+		INSERT INTO employee(
+			emp_id
+			,emp_pw
+			,dept_id
+			,jbgd_id
+			,emp_name
+			,emp_birth
+			,emp_tel
+		
+			,emp_post
+			,emp_addr1
+			,emp_addr2
+			,emp_date
+			,emp_idno
+			,cust_id
+			,enabled
+			,authrt_id
+		)
+		VALUES(
+    		 #{empId}
+			,#{empPw}
+			,#{deptId}
+			,#{jbgdId}
+			,#{empName}
+			,#{empBirth}
+			,#{empTel}
+			
+			,#{empPost}
+			,#{empAddr1}
+			,#{empAddr2}
+			,#{empDate}
+			,#{empIdno}
+			,#{custId}
+			,'1'
+			,'1'
+		)
+	</insert>
+
+	<insert id="addAuthGrop" parameterType="authorityGroup">
+		<selectKey keyProperty="authrtId" resultType="string"  order="BEFORE">
+			select seq_authority_group.nextval from dual
+		</selectKey>
+		INSERT INTO authority_group(
+				 authrt_id
+				,authrt_nm
+				,cust_id
+		)VALUES(
+			 #{authrtId}
+			,#{authrtNm}
+			,#{custId}
+		)
+	</insert>
+	
+	<!-- 기본권한 11가지  -->
+	<insert id="addHome" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'HOME'
+		)
+	</insert>
+	<insert id="addMail" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'MAIL'
+		)
+	</insert>
+	<insert id="addApproval" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'APPROVAL'
+		)
+	</insert>
+	<insert id="addHr" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'HR'
+		)
+	</insert>
+	<insert id="addAddressbook" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'ADDRESSBOOK'
+		)
+	</insert>
+	<insert id="addCalendar" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'CALENDAR'
+		)
+	</insert>
+	<insert id="addCloud" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'CLOUD'
+		)
+	</insert>
+	<insert id="addBoard" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'BOARD'
+		)
+	</insert>
+	<insert id="addReservation" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'RESERVATION'
+		)
+	</insert>
+	<insert id="addTodo" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'TODO'
+		)
+	</insert>
+	<insert id="addSuvy" parameterType="string">
+		INSERT INTO auth_menu(
+			 AUTHRT_ID
+			,MENU_ID
+		)VALUES(
+			#{authrtId}
+			,'SUVY'
+		)
+	</insert>
+	<!-- 기본권한 11가지  END -->
+	
+	<select id="getAuthList" parameterType="string" resultType="authorityGroup">
+		SELECT 
+			 authrt_id
+			,authrt_nm
+			,cust_id
+		FROM  authority_group
+		WHERE cust_id = #{custId}
+	</select>
+	
+	<select id="getAuthMenu" parameterType="string" resultType="authMenu">
+		SELECT 
+			 authrt_id
+			,menu_id
+		FROM auth_menu
+		WHERE authrt_id = #{authrtId}
+	</select>
+	
+	<insert id="addAuthMenu" parameterType="authMenu">
+		INSERT INTO auth_menu(
+			 authrt_id
+			,menu_id
+		)VALUES(
+			 #{authrtId}
+			,#{menuId}
+		)
+	</insert>
+	
+	<delete id="delAuthMenu" parameterType="authMenu">
+		DELETE FROM auth_menu
+		WHERE
+			authrt_id = #{authrtId}
+		AND 
+			menu_id = #{menuId}
+	</delete>
+	
+	<update id="editAuth" parameterType="employee">
+		UPDATE employee
+		SET
+			authrt_id = #{authrtId}
+		WHERE emp_id = #{empId}
+	</update>
+	
+	<update id="editWorkGroup" parameterType="employee">
+		UPDATE employee
+		SET
+			group_no = #{groupNo}
+		WHERE emp_id = #{empId}
+	</update>
+	
+	
+	<select id="countAD" parameterType="string" resultType="int">
+		SELECT count(*)
+		FROM auth_menu a, menu b
+		WHERE a.menu_id = b.menu_id
+		AND a.authrt_id = #{authrtId}
+		AND a.menu_id LIKE '%_AD'
+	</select>
+	
+	<delete id="delHomeAD" parameterType="string">
+		DELETE FROM auth_menu
+		WHERE
+			authrt_id = #{authrtId}
+		AND 
+			menu_id = 'HOME_AD'
+	</delete>
+	
+	<select id="getHomeAD" parameterType="string" resultType="int">
+		select count(*)
+		from auth_menu
+		where authrt_id = #{authrtId}
+		and menu_id = 'HOME_AD' 
+	</select>
+	
+	<insert id="addHomeAD" parameterType="string">
+		INSERT INTO auth_menu(
+			 authrt_id
+			,menu_id
+		)VALUES(
+			 #{authrtId}
+			,'HOME_AD'
+		)
+	</insert>
+	
+	<select id="getWorkGroupList" parameterType="string" resultType="workGroup">
+		SELECT 
+			group_no
+			,cust_id
+			,group_nm
+			,group_work_bgng_dt
+			,group_work_end_dt
+			,group_rest_bgng_dt
+			,group_rest_end_dt
+		FROM work_group
+		WHERE CUST_ID = #{custId}
+	</select>
+	
+	<select id="getEmployeeOne" parameterType="String" resultType="employee">
+		select * from employee
+		where emp_id = #{empId}
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+

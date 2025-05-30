@@ -1,0 +1,1028 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.document.mapper.DocumentMapper">
+
+	<!-- 템플릿 Map -->
+	<resultMap type="templateCategory" id="templateCategoryMap">
+		<result property="clsfNm" column="clsf_nm"/>
+		<collection property="templates" resultMap="templateMap"/>
+	</resultMap>
+	<resultMap type="template" id="templateMap">
+		<result property="tmpltCd" column="tmplt_cd"/>
+		<result property="tmpltNm" column="tmplt_nm"/>
+		<result property="useYn" column="use_yn"/>
+		<result property="serviceClassNm" column="service_class_nm"/>
+		<result property="itemMethodNm" column="item_method_nm"/>
+	</resultMap>
+
+	<!-- 템플릿 리스트 select -->
+	<select id="selectTemplateList" resultMap="templateCategoryMap">
+		SELECT 
+			clsf_nm
+			,tmplt_cd
+			,tmplt_nm
+			,use_yn
+			,service_class_nm
+			,item_method_nm
+		FROM template
+		WHERE use_yn = 'Y'
+		ORDER BY clsf_nm, tmplt_nm
+	</select>
+	
+	<!-- 템플릿 select -->
+	<select id="selectTemplate" parameterType="int" resultType="template">
+		select 
+			clsf_nm
+			,tmplt_cd
+			,tmplt_nm
+			,tmplt_cn
+			,use_yn
+		FROM template
+		WHERE tmplt_cd = #{tmpltCd}
+	</select>
+	
+	<!-- 문서 insert 시작 -->
+	<insert id="insertDocument" parameterType="doc" useGeneratedKeys="true">
+		<selectKey keyProperty="aprvSn" resultType="int" order="BEFORE">
+			SELECT seq_document.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO approval(
+			aprv_sn
+			<if test="aprvNo != null">
+			,aprv_no
+			</if>
+			,tmplt_cd
+			,cust_id
+			,emp_id
+			,atrz_dmnd_dt
+			,aprv_ttl
+			,aprv_cn
+			,prgrs_stts_cd
+			<if test="jsonObject != null">
+			,json_object
+			</if>
+		) VALUES (
+			#{aprvSn}
+			<if test="aprvNo != null">
+			,#{aprvNo}
+			</if>
+			,#{tmpltCd}
+			,#{custId}
+			,#{empId}
+			,SYSDATE
+			,#{aprvTtl}
+			,#{aprvCn}
+			,#{prgrsSttsCd}
+			<if test="jsonObject != null">
+			,#{jsonObject}
+			</if>
+		)
+	</insert>
+	<insert id="insertApprovalLine" parameterType="apprLine">
+		insert into approval_line(
+			aprv_line_sn
+			,aprv_sn
+			,emp_id
+			,aprv_order
+			,prgrs_stts_cd
+			,aprv_se_cd
+		) values (
+			seq_approval_line.NEXTVAL
+			,#{aprvSn}
+			,#{empId}
+			,#{aprvOrder}
+			,#{prgrsSttsCd}
+			,#{aprvSeCd}
+		)
+	</insert>
+	<insert id="insertDestination" parameterType="dept">
+		INSERT INTO destination(	
+			 aprv_sn
+			,dept_id
+		) VALUES (
+			 #{aprvSn}
+			,#{deptId}
+		)
+	</insert>
+	<!-- 문서 insert 끝 -->
+	
+	<!-- 회사 전체 문서 (검색조건 추가) -->
+	<select id="selectDocumentList" parameterType="string">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.cust_id
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN client c ON a.cust_id = c.cust_id
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		WHERE a.cust_id = #{custId}
+	</select>
+	
+	<!-- 결재대기 (검색조건, 대결자 추가) -->
+	<select id="selectDocumentListWithPending" parameterType="doc" resultType="doc">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+		WHERE 1=1
+		<!-- 대기, 진행, 승인(선결) 중 하나 -->
+		AND a.prgrs_stts_cd IN (3,4,5)
+		<!-- 정상, 합의 중 하나 -->
+		AND l.aprv_se_cd IN (1,3)
+		<!-- 대기, 후결대기 중 하나 -->
+		AND l.prgrs_stts_cd IN (2,5)
+		AND (l.emp_id = #{empId} 
+			OR l.emp_id = (SELECT emp_id
+							FROM proxy
+							WHERE 1=1
+							AND agt_id = #{empId}
+						<![CDATA[
+							AND bgng_dt <= sysdate
+							AND end_dt > sysdate))
+						]]>
+		<if test="dmndStartDate != null and dmndEndDate != null">
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		</if>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 결재예정 (검색조건, 대결자 추가) -->
+	<select id="selectDocumentListWithScheduled" parameterType="doc" resultType="doc">
+		SELECT DISTINCT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+		WHERE 1=1
+		AND NOT a.prgrs_stts_cd IN (1,2,7)
+		AND l.aprv_se_cd IN (1,3)
+		AND l.prgrs_stts_cd = 1
+		AND (l.emp_id = #{empId} 
+			OR l.emp_id IN (SELECT emp_id
+							FROM proxy
+							WHERE 1=1
+							AND agt_id = #{empId}
+						<![CDATA[
+							AND bgng_dt <= sysdate
+							AND end_dt > sysdate))
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 결재완료 (검색조건, 대결자 추가) -->
+	<select id="selectDocumentListWithCompleted" parameterType="doc" resultType="doc">
+		SELECT DISTINCT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+		WHERE 1=1
+		AND NOT a.prgrs_stts_cd IN (1,2)
+		AND l.aprv_se_cd IN (1,3)
+		AND l.prgrs_stts_cd IN (3,4,6,7)
+		AND (l.emp_id = #{empId} 
+			OR l.emp_id = (SELECT emp_id
+							FROM proxy
+							WHERE 1=1
+							AND agt_id = #{empId}
+							<![CDATA[
+							AND bgng_dt <= sysdate
+							AND end_dt > sysdate))
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 부서수신 (검색조건 추가) -->
+	<select id="selectDocumentListWithDepartment" parameterType="doc" resultType="doc">
+		SELECT DISTINCT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		    ,d.dept_id
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER JOIN destination d ON a.aprv_sn = d.aprv_sn
+		WHERE 1=1
+		AND a.prgrs_stts_cd IN (5,6)
+		AND d.dept_id = #{deptId}
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 참조/열람 (검색조건 추가) -->
+	<select id="selectDocumentListWithReference" parameterType="doc" resultType="doc">
+		<!-- 참조 -->
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+		WHERE 1=1
+		AND l.aprv_se_cd IN (4)
+		AND l.emp_id = #{empId}
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		
+ 		UNION
+ 		
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+		WHERE 1=1
+		AND a.prgrs_stts_cd IN (5,6)
+		AND l.aprv_se_cd IN (5)
+		AND l.emp_id = #{empId}
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY aprv_sn DESC
+	</select>
+	
+	<!-- 내 기안 (검색조건 추가) -->
+	<select id="selectDocumentListWithDrafts" parameterType="doc" resultType="doc">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		WHERE 1=1
+		AND a.prgrs_stts_cd IN (2,3,4,5,6,7)
+		AND a.emp_id = #{empId}
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 임시저장 (검색조건 추가) -->
+	<select id="selectDocumentListWithTemp" parameterType="doc" resultType="doc">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		WHERE 1=1
+		AND a.prgrs_stts_cd = 1
+		AND a.emp_id = #{empId}
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 스크랩 (검색조건 추가) -->
+	<select id="selectDocumentListWithScraps" parameterType="doc" resultType="doc">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		    ,s.scrap_sn
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER JOIN scrap_document s ON a.aprv_sn = s.aprv_sn
+		WHERE 1=1
+		AND s.emp_id = #{empId}
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 공유 (검색조건 추가) -->
+	<select id="selectDocumentListWithShared" parameterType="doc" resultType="doc">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER JOIN share_document s ON a.aprv_sn = s.aprv_sn
+		WHERE 1=1
+		AND s.emp_id = #{empId}
+		<![CDATA[
+		AND a.atrz_dmnd_dt >= to_date(#{dmndStartDate}, 'YYYY-MM-DD')
+		AND a.atrz_dmnd_dt < to_date(#{dmndEndDate}, 'YYYY-MM-DD') + 1
+		]]>
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 문서 select 시작 -->
+	<resultMap type="doc" id="docMap">
+		<id property="aprvSn" column="aprv_sn"/>
+		<result property="aprvNo" column="aprv_no"/>
+		<result property="tmpltCd" column="tmplt_cd"/>
+		<result property="clsfNm" column="clsf_nm"/>
+		<result property="tmpltNm" column="tmplt_nm"/>
+		<result property="custId" column="cust_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empName" column="emp_name"/>
+		<result property="deptNm" column="dept_nm"/>
+		<result property="atrzDmndDt" column="atrz_dmnd_dt"/>
+		<result property="atrzCmptnDt" column="atrz_cmptn_dt"/>
+		<result property="aprvTtl" column="aprv_ttl"/>
+		<result property="aprvCn" column="aprv_cn"/>
+		<result property="prgrsSttsCd" column="prgrs_stts_cd"/>
+		<collection column="aprv_sn = aprv_sn" property="approvalLine" javaType="java.util.List" 
+			ofType="apprLine" select="selectApprovalLineWithDocument"/>
+		<collection column="aprv_sn = aprv_sn" property="viewers" javaType="java.util.List" 
+			ofType="apprLine" select="selectViewerWithDocument"/>
+		<collection column="aprv_sn = aprv_sn" property="destinations" javaType="java.util.List" 
+			ofType="dept" select="selectDestinationWithDocument"/>
+	</resultMap>
+	<select id="selectApprovalLineWithDocument" resultType="apprLine">
+		SELECT
+			 l.aprv_sn
+			,l.aprv_line_sn
+			,l.emp_id
+			,e.emp_profile
+			,e.emp_name
+			,p.jbgd_nm
+			,d.dept_nm
+			,l.aprv_order
+			,to_char(l.atrz_dt, 'yyyy-mm-dd') atrz_dt
+			,l.atrz_opnn
+			,l.prgrs_stts_cd
+			,l.aprv_se_cd
+			,l.dcrb_yn
+			,l.prsl_dt
+			,c.coco_nm
+		FROM approval_line l
+		INNER JOIN employee e ON l.emp_id = e.emp_id
+		INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		INNER JOIN common_code c ON l.aprv_se_cd = c.coco_id
+		WHERE 1=1
+		AND c.cocog_id = 'ALT'
+		AND l.aprv_se_cd IN (1,2,3,6)
+		AND aprv_sn = #{aprv_sn}
+		ORDER BY l.aprv_order DESC
+	</select>
+	<select id="selectViewerWithDocument" resultType="apprLine">
+		SELECT
+			 l.aprv_sn
+			,l.aprv_line_sn
+			,l.emp_id
+			,e.emp_profile
+			,e.emp_name
+			,p.jbgd_nm
+			,d.dept_nm
+			,l.aprv_order
+			,l.atrz_dt
+			,l.atrz_opnn
+			,l.prgrs_stts_cd
+			,l.aprv_se_cd
+			,l.dcrb_yn
+			,l.prsl_dt
+			,c.coco_nm
+		FROM approval_line l
+		INNER JOIN employee e ON l.emp_id = e.emp_id
+		INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		INNER JOIN common_code c ON l.aprv_se_cd = c.coco_id
+		WHERE 1=1
+		AND c.cocog_id = 'ALT'
+		AND l.aprv_se_cd IN (4,5)
+		AND aprv_sn = #{aprv_sn}
+	</select>
+	<select id="selectDestinationWithDocument" resultType="dept">
+		SELECT
+			 de.aprv_sn
+			,de.dept_id
+			,d.dept_nm
+		FROM destination de
+		INNER JOIN department d ON de.dept_id = d.dept_id
+		WHERE de.aprv_sn= #{aprv_sn}
+	</select>
+	<select id="selectDocument" parameterType="int" resultMap="docMap">
+		SELECT
+			 a.aprv_sn
+			,a.aprv_no
+			,a.tmplt_cd
+			,t.clsf_nm
+			,t.tmplt_nm
+			,a.cust_id
+			,a.emp_id
+			,e.emp_name
+			,d.dept_nm
+			,to_char(a.atrz_dmnd_dt, 'yyyy-mm-dd') atrz_dmnd_dt
+			,to_char(a.atrz_cmptn_dt, 'yyyy-mm-dd') atrz_cmptn_dt
+			,a.aprv_ttl
+			,a.aprv_cn
+			,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN template t ON a.tmplt_cd = t.tmplt_cd
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		WHERE aprv_sn = #{aprvSn}	
+	</select>
+	<!-- 문서 select 끝 -->
+	
+	<select id="selectDocumentCountWithConfig" parameterType="config" resultType="int">
+		SELECT count(aprv_no)
+		FROM approval
+		WHERE aprv_no LIKE '${likeCondition}'
+	</select>
+	
+	<select id="selectMyPermission" parameterType="map" resultType="apprLine">
+		SELECT * 
+		FROM approval_line
+		WHERE 1=1
+		AND aprv_sn = #{aprvSn}
+		AND (emp_id = #{empId}
+			OR emp_id IN (SELECT DISTINCT
+								emp_id
+							FROM proxy
+							WHERE 1=1
+							AND agt_id = #{empId}
+							<![CDATA[
+							AND bgng_dt <= sysdate
+							AND end_dt > sysdate))
+							]]>
+	</select>
+	
+	<!-- 문서 스크랩 -->
+	<insert id="insertScrapDocument" parameterType="map">
+		INSERT INTO scrap_document(
+			 scrap_sn
+			,aprv_sn
+			,emp_id
+		) VALUES (
+			 seq_scrap_document.NEXTVAL
+			,#{aprvSN}
+			,#{empId}
+		)
+	</insert>
+	
+	<!-- 문서 스크랩 삭제 -->
+	<delete id="deleteScrapDocument" parameterType="map">
+		DELETE FROM scrap_document
+		WHERE 1=1
+		AND aprv_sn = #{aprvSn}
+		AND emp_id = #{empId}
+	</delete>
+	
+	<!-- 문서 회수 -->
+	<update id="updateDocumentStatusToCollect" parameterType="int">
+		UPDATE approval
+		SET prgrs_stts_cd = 2
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+	
+	<!-- 공유문서 추가 -->
+	<insert id="insertShareDocument" parameterType="doc">
+		INSERT INTO share_document(
+			 emp_id
+			,aprv_sn
+			,dlvr_id
+		) VALUES (
+			 #{empId}
+			,#{aprvSn}
+			,#{dlvrId}
+		)
+	</insert>
+	
+	<!-- 최근 사용한 양식 4가지 -->
+	<select id="selectTemplateRecentlyUsed" parameterType="string" resultType="template">
+		SELECT DISTINCT
+				tmplt_cd
+				,tmplt_nm
+				,clsf_nm
+				,icon
+				,background_color
+		FROM (SELECT
+					a.tmplt_cd
+					,a.aprv_sn
+					,t.tmplt_nm
+					,t.clsf_nm
+					,t.icon
+					,t.background_color
+				FROM approval a
+				INNER JOIN template t ON a.tmplt_cd = t.tmplt_cd
+				WHERE 1=1
+				AND a.emp_id = #{empId}
+				AND t.use_yn = 'Y'
+				ORDER BY aprv_sn DESC
+			)
+		<![CDATA[
+		WHERE ROWNUM <= 6
+		]]>
+	</select>
+	
+	
+	<!-- 결재예정 count -->
+	<select id="selectCountDocumentListWithScheduled" parameterType="string" resultType="int">
+		SELECT COUNT(aprv_sn)
+		FROM (
+			SELECT DISTINCT
+			     a.aprv_sn
+			    ,a.aprv_no
+			    ,a.tmplt_cd
+			    ,a.emp_id
+			    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+			    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+			    ,a.aprv_ttl
+			    ,a.prgrs_stts_cd
+			FROM approval a
+			INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+			WHERE 1=1
+			AND NOT a.prgrs_stts_cd IN (1,2,7)
+			AND l.aprv_se_cd IN (1,3)
+			AND l.prgrs_stts_cd = 1
+			AND (l.emp_id = #{empId} 
+				OR l.emp_id IN (SELECT emp_id
+								FROM proxy
+								WHERE 1=1
+								AND agt_id = #{empId}
+							<![CDATA[
+								AND bgng_dt <= sysdate
+								AND end_dt > sysdate))
+							]]>
+		)
+	</select>
+	
+	<!-- 결재완료 Count -->
+	<select id="selectCountDocumentListWithCompleted" parameterType="string" resultType="int">
+		SELECT COUNT(aprv_sn)
+		FROM (
+			SELECT DISTINCT
+			     a.aprv_sn
+			    ,a.aprv_no
+			    ,a.tmplt_cd
+			    ,a.emp_id
+			    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+			    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+			    ,a.aprv_ttl
+			    ,a.prgrs_stts_cd
+			FROM approval a
+			INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+			WHERE 1=1
+			AND NOT a.prgrs_stts_cd IN (1,2)
+			AND l.aprv_se_cd IN (1,3)
+			AND l.prgrs_stts_cd IN (3,4,6,7)
+			AND (l.emp_id = #{empId} 
+				OR l.emp_id = (SELECT emp_id
+								FROM proxy
+								WHERE 1=1
+								AND agt_id = #{empId}
+								<![CDATA[
+								AND bgng_dt <= sysdate
+								AND end_dt > sysdate))
+			]]>
+		)
+	</select>
+	
+	<!-- 읽지 않은 문서 Count (열람자) -->
+	<select id="selectCountDocumentListWithViewer" parameterType="string" resultType="int">
+		SELECT COUNT(aprv_sn)
+		FROM (
+			SELECT
+			     a.aprv_sn
+			    ,a.aprv_no
+			    ,a.tmplt_cd
+			    ,a.emp_id
+			    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+			    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+			    ,a.aprv_ttl
+			    ,a.prgrs_stts_cd
+			FROM approval a
+			INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+			WHERE 1=1
+			AND a.prgrs_stts_cd IN (5,6)
+			AND l.aprv_se_cd IN (5)
+			AND l.emp_id = #{empId}
+			AND l.prsl_dt IS NULL
+		)
+	</select>
+	
+	<!-- 읽지 않은 문서 Count (참조자) -->
+	<select id="selectCountDocumentListWithReference" parameterType="string" resultType="int">
+		SELECT COUNT(aprv_sn)
+		FROM (
+			SELECT
+			     a.aprv_sn
+			    ,a.aprv_no
+			    ,a.tmplt_cd
+			    ,a.emp_id
+			    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+			    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+			    ,a.aprv_ttl
+			    ,a.prgrs_stts_cd
+			FROM approval a
+			INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+			WHERE 1=1
+			AND l.aprv_se_cd IN (4)
+			AND l.emp_id = #{empId}
+			AND l.prsl_dt IS NULL
+		)
+	</select>
+	
+	<!-- 읽지 않은 문서 리스트 select (All) -->
+	<select id="selectDocumentListWithNotRead" parameterType="string" resultType="doc">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+		WHERE 1=1
+		AND a.prgrs_stts_cd IN (5,6)
+		AND l.aprv_se_cd IN (5)
+		AND l.emp_id = #{empId}
+		AND l.prsl_dt IS NULL
+		
+		UNION
+		
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER join approval_line l ON a.aprv_sn = l.aprv_sn
+		WHERE 1=1
+		AND l.aprv_se_cd IN (4)
+		AND l.emp_id = #{empId}
+		AND l.prsl_dt IS NULL
+		ORDER BY aprv_sn DESC
+	</select>
+	
+	<!-- 진행 중인 문서 리스트 select (All) -->
+	<select id="selectDocumentListWithOnProcess" parameterType="string" resultType="doc">
+		SELECT 
+			 a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+		    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		WHERE 1=1
+		AND a.emp_id = #{empId}
+		AND a.prgrs_stts_cd IN (3,4)
+		ORDER BY a.aprv_sn DESC
+	</select>
+	
+	<!-- 최종 승인된 문서 Count -->
+	<select id="selectCountDocumentWithConfirmed" parameterType="string" resultType="int">
+		SELECT COUNT(aprv_sn)
+		FROM (
+			SELECT aprv_sn
+			FROM approval
+			WHERE 1=1 
+			AND emp_id = #{empId}
+			AND prgrs_stts_cd IN (5,6)
+		)
+	</select>
+	
+	<!-- 최종 반려된 문서 Count -->
+	<select id="selectCountDocumentWithRejected" parameterType="string" resultType="int">
+		SELECT COUNT(aprv_sn)
+		FROM (
+			SELECT aprv_sn
+			FROM approval
+			WHERE 1=1 
+			AND emp_id = #{empId}
+			AND prgrs_stts_cd = 7
+		)
+	</select>
+	
+	<!-- 최근 부서수신 5건 -->
+	<select id="selectDocumentListWithDepartmentRecently5" parameterType="string" resultType="doc">
+		SELECT *
+		FROM (
+			SELECT DISTINCT
+			     a.aprv_sn
+			    ,a.aprv_no
+			    ,a.tmplt_cd
+			    ,a.emp_id
+			    ,e.emp_name
+			    ,to_char(a.atrz_dmnd_dt, 'YYYY-MM-DD') AS atrz_dmnd_dt
+			    ,to_char(a.atrz_cmptn_dt, 'YYYY-MM-DD') AS atrz_cmptn_dt
+			    ,a.aprv_ttl
+			    ,a.prgrs_stts_cd
+			    ,d.dept_id
+			FROM approval a
+			INNER JOIN employee e ON a.emp_id = e.emp_id
+			INNER JOIN destination d ON a.aprv_sn = d.aprv_sn
+			WHERE 1=1
+			AND a.prgrs_stts_cd IN (5,6)
+			AND d.dept_id = #{deptId}
+			ORDER BY a.aprv_sn DESC
+		)
+		<![CDATA[
+		WHERE ROWNUM <= 5
+		]]>
+	</select>
+	
+	
+	
+	<insert id="insertProxy" parameterType="proxy" useGeneratedKeys="true">
+		<selectKey order="BEFORE" keyProperty="proxyId" resultType="int">
+			select seq_proxy.NEXTVAL FROM dual
+		</selectKey>
+		INSERT INTO proxy(
+			 proxy_id
+			,emp_id
+			,agt_id
+			,bgng_dt
+			,end_dt
+			,reason
+			,stng_ymd
+		) VALUES (
+			 #{proxyId}
+			,#{empId}
+			,#{agtId}
+			,#{bgngDt}
+			,#{endDt}
+			,#{reason}
+			,SYSDATE
+		)
+	</insert>
+	
+	<select id="selectProxyList" parameterType="string" resultType="proxy">
+		SELECT 
+			 p.proxy_id
+			,p.emp_id
+			,p.agt_id
+			,to_char(p.bgng_dt, 'YYYY-MM-DD') AS bgng_dt
+			,to_char(p.end_dt, 'YYYY-MM-DD') AS end_dt
+			,p.reason
+			,e.emp_name
+			,to_char(p.stng_ymd, 'YYYY-MM-DD') AS stng_ymd
+		FROM proxy p
+		INNER JOIN employee e ON p.agt_id = e.emp_id
+		WHERE p.emp_id = #{empId}
+		ORDER BY p.proxy_id DESC
+	</select>
+	
+	<update id="deleteProxy" parameterType="int">
+		UPDATE proxy
+		SET end_dt = SYSDATE
+		WHERE proxy_id = #{proxyId}
+	</update>
+	
+	<!-- 대결일 때 -->
+	
+	<!-- 대결자명으로 결재라인 insert -->
+	<insert id="insertDcrbApprovalLine" parameterType="apprLine">
+		INSERT INTO approval_line(
+			 aprv_line_sn
+			,aprv_sn
+			,emp_id
+			,aprv_order
+			,prgrs_stts_cd
+			,aprv_se_cd
+			,atrz_dt
+			,atrz_opnn
+		) VALUES (
+			 seq_approval_line.NEXTVAL
+			,#{aprvSn}
+			,#{empId}
+			,#{aprvOrder}
+			,#{prgrsSttsCd}
+			,2
+			,SYSDATE
+			,#{atrzOpnn}
+		)
+	</insert>
+	
+	<!-- 기존 결재자 대결위임처리 -->
+	<update id="updateDelegateWithProxy" parameterType="apprLine">
+		UPDATE approval_line
+		SET
+			prgrs_stts_cd = 6
+		WHERE aprv_line_sn = #{aprvLineSn}
+	</update>
+	
+	
+	
+	<!-- 대결이 아닐 때 -->
+	
+	<!-- 본인 결재 상태코드 변경 -->
+	<update id="updateApprovalLineStatus" parameterType="apprLine">
+		UPDATE approval_line
+		SET
+			 prgrs_stts_cd = #{prgrsSttsCd}
+			,atrz_dt = SYSDATE
+			,atrz_opnn = #{atrzOpnn}
+		WHERE aprv_line_sn = #{aprvLineSn}
+	</update>
+	
+	
+	
+	<!-- 전결일 때 -->
+	
+	<!-- 이후 결재자 전부 전결위임처리 -->
+	<update id="updateDelegateWithApproval" parameterType="apprLine">
+		UPDATE approval_line
+		SET
+			prgrs_stts_cd = 7
+		WHERE 1=1
+		AND aprv_sn = #{aprvSn}
+		AND aprv_line_sn <![CDATA[ < #{aprvLineSn} ]]>
+	</update>
+	
+	
+	
+	<!-- 첫번째 결재자인지 확인 -->
+	<select id="selectForIsFirstCheck" parameterType="apprLine" resultType="int">
+		SELECT count(aprv_line_sn)
+		FROM approval_line
+		WHERE 1=1
+		AND aprv_sn = #{aprvSn}
+		AND prgrs_stts_cd IN (3,4,5,6,7)
+	</select>
+	
+	
+	<!-- 첫번째 결재자일 때 -->
+	
+	<!-- 문서 상태 진행으로 변경 -->
+	<update id="updateDocumentFirstConfirm" parameterType="apprLine">
+		UPDATE approval
+		SET
+			prgrs_stts_cd = 4
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+	
+	
+	
+	<!-- 최종 결재자인지 확인 -->
+	<select id="selectForIsFinalCheck" parameterType="apprLine" resultType="int">
+		SELECT aprv_order
+		FROM approval_line
+		WHERE 1=1
+		AND aprv_line_sn = #{aprvLineSn}
+	</select>
+	
+	
+	
+	<!-- 최종 결재자가 아닐 때 -->
+	
+	<!-- 다음 결재자 상태코드 변경 -->
+	<update id="updateNextApproverStatus" parameterType="apprLine">
+		UPDATE approval_line
+		SET 
+			prgrs_stts_cd = 2
+		WHERE aprv_line_sn = (
+								SELECT aprv_line_sn
+								FROM (
+									SELECT aprv_line_sn
+									FROM approval_line
+									WHERE aprv_sn = #{aprvSn}
+									ORDER BY aprv_order DESC)
+								<![CDATA[
+								WHERE ROWNUM <= 1
+								]]>
+							)
+	</update>
+	
+	
+	
+	<!-- 전결 또는 최종 결재자일 때 -->
+	
+	<!-- 문서 최종 승인처리 -->
+	<update id="updateDocumentFinalConfirm" parameterType="apprLine">
+		UPDATE approval
+		SET
+			 atrz_cmptn_dt = SYSDATE
+			,prgrs_stts_cd = 6
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+	
+	<!-- 반려일 때 -->
+	
+	<!-- 문서 최종 반려처리 -->
+	<update id="updateDocumentFinalReject" parameterType="apprLine">
+		UPDATE approval
+		SET
+			 atrz_cmptn_dt = SYSDATE
+			,prgrs_stts_cd = 7
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+	
+	
+	<!-- 문서번호 업데이트 -->
+	<update id="updateAprvNo" parameterType="doc">
+		UPDATE approval
+		SET aprv_no = #{aprvNo}
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+</mapper>

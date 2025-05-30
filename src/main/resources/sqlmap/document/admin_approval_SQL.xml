@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.approval.mapper.AdminApprovalMapper">
+
+	<!-- 회사 전체 문서 (검색조건 추가) -->
+	<select id="selectAllDocumentList" parameterType="string" resultType="doc">
+		SELECT
+		     a.aprv_sn
+		    ,a.aprv_no
+		    ,a.tmplt_cd
+		    ,a.cust_id
+		    ,a.emp_id
+		    ,e.emp_name
+		    ,a.atrz_dmnd_dt
+		    ,a.atrz_cmptn_dt
+		    ,a.aprv_ttl
+		    ,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN client c ON a.cust_id = c.cust_id
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		WHERE a.cust_id = #{custId}
+	</select>
+	
+	
+	<!-- 문서 select 시작 -->
+	<resultMap type="doc" id="docMap">
+		<id property="aprvSn" column="aprv_sn"/>
+		<result property="aprvNo" column="aprv_no"/>
+		<result property="tmpltCd" column="tmplt_cd"/>
+		<result property="clsfNm" column="clsf_nm"/>
+		<result property="tmpltNm" column="tmplt_nm"/>
+		<result property="custId" column="cust_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empName" column="emp_name"/>
+		<result property="deptNm" column="dept_nm"/>
+		<result property="atrzDmndDt" column="atrz_dmnd_dt"/>
+		<result property="atrzCmptnDt" column="atrz_cmptn_dt"/>
+		<result property="aprvTtl" column="aprv_ttl"/>
+		<result property="aprvCn" column="aprv_cn"/>
+		<result property="prgrsSttsCd" column="prgrs_stts_cd"/>
+		<collection column="aprv_sn = aprv_sn" property="approvalLine" javaType="java.util.List" 
+			ofType="apprLine" select="selectApprovalLineWithDocument"/>
+		<collection column="aprv_sn = aprv_sn" property="viewers" javaType="java.util.List" 
+			ofType="apprLine" select="selectViewerWithDocument"/>
+		<collection column="aprv_sn = aprv_sn" property="destinations" javaType="java.util.List" 
+			ofType="dept" select="selectDestinationWithDocument"/>
+	</resultMap>
+	<select id="selectApprovalLineWithDocument" resultType="apprLine">
+		SELECT
+			 l.aprv_sn
+			,l.aprv_line_sn
+			,l.emp_id
+			,e.emp_profile
+			,e.emp_name
+			,p.jbgd_nm
+			,d.dept_nm
+			,l.aprv_order
+			,to_char(l.atrz_dt, 'yyyy-mm-dd') atrz_dt
+			,l.atrz_opnn
+			,l.prgrs_stts_cd
+			,l.aprv_se_cd
+			,l.dcrb_yn
+			,l.prsl_dt
+			,c.coco_nm
+		FROM approval_line l
+		INNER JOIN employee e ON l.emp_id = e.emp_id
+		INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		INNER JOIN common_code c ON l.aprv_se_cd = c.coco_id
+		WHERE 1=1
+		AND c.cocog_id = 'ALT'
+		AND l.aprv_se_cd IN (1,2,3,6)
+		AND aprv_sn = #{aprv_sn}
+	</select>
+	<select id="selectViewerWithDocument" resultType="apprLine">
+		SELECT
+			 l.aprv_sn
+			,l.aprv_line_sn
+			,l.emp_id
+			,e.emp_profile
+			,e.emp_name
+			,p.jbgd_nm
+			,d.dept_nm
+			,l.aprv_order
+			,l.atrz_dt
+			,l.atrz_opnn
+			,l.prgrs_stts_cd
+			,l.aprv_se_cd
+			,l.dcrb_yn
+			,l.prsl_dt
+			,c.coco_nm
+		FROM approval_line l
+		INNER JOIN employee e ON l.emp_id = e.emp_id
+		INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		INNER JOIN common_code c ON l.aprv_se_cd = c.coco_id
+		WHERE 1=1
+		AND c.cocog_id = 'ALT'
+		AND l.aprv_se_cd IN (4,5)
+		AND aprv_sn = #{aprv_sn}
+	</select>
+	<select id="selectDestinationWithDocument" resultType="dept">
+		SELECT
+			 de.aprv_sn
+			,de.dept_id
+			,d.dept_nm
+		FROM destination de
+		INNER JOIN department d ON de.dept_id = d.dept_id
+		WHERE de.aprv_sn= #{aprv_sn}
+	</select>
+	<select id="selectDocument" parameterType="int" resultMap="docMap">
+		SELECT
+			 a.aprv_sn
+			,a.aprv_no
+			,a.tmplt_cd
+			,t.clsf_nm
+			,t.tmplt_nm
+			,a.cust_id
+			,a.emp_id
+			,e.emp_name
+			,d.dept_nm
+			,to_char(a.atrz_dmnd_dt, 'yyyy-mm-dd') atrz_dmnd_dt
+			,to_char(a.atrz_cmptn_dt, 'yyyy-mm-dd') atrz_cmptn_dt
+			,a.aprv_ttl
+			,a.aprv_cn
+			,a.prgrs_stts_cd
+		FROM approval a
+		INNER JOIN template t ON a.tmplt_cd = t.tmplt_cd
+		INNER JOIN employee e ON a.emp_id = e.emp_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		WHERE aprv_sn = #{aprvSn}	
+	</select>
+	<!-- 문서 select 끝 -->
+	
+	<insert id="insertConfig" parameterType="config">
+		INSERT INTO approval_config(
+			 cust_id
+			,agree_use_yn
+			,pre_use_yn
+			,dcrb_use_yn
+			,sub_use_yn
+			,view_use_yn
+			,ref_use_yn
+			,agree_order
+			,modifyer
+			,ret_time
+			,share_use_yn
+			,verif_use_yn
+			,numbering_time
+			,numbering_reg
+		) VALUES (
+			 #{custId}
+			,#{agreeUseYn}
+			,#{preUseYn}
+			,#{dcrbUseYn}
+			,#{subUseYn}
+			,#{viewUseYn}
+			,#{refUseYn}
+			,#{agreeOrder}
+			,#{modifyer}
+			,#{retTime}
+			,#{shareUseYn}
+			,#{verifUseYn}
+			,#{numberingTime}
+			,#{numberingReg}
+		)
+	</insert>
+	
+	<select id="selectConfigCount" parameterType="config" resultType="int">
+		SELECT count(cust_id)
+		FROM approval_config
+		WHERE cust_id = #{custId}
+	</select>
+	
+	<update id="updateConfig" parameterType="config">
+		UPDATE approval_config
+		SET
+			 agree_use_yn = #{agreeUseYn}
+			,pre_use_yn = #{preUseYn}
+			,dcrb_use_yn = #{dcrbUseYn}
+			,sub_use_yn = #{subUseYn}
+			,view_use_yn = #{viewUseYn}
+			,ref_use_yn = #{refUseYn}
+			,agree_order = #{agreeOrder}
+			,modifyer = #{modifyer}
+			,modify_time = #{modifyTime}
+			,ret_time = #{retTime}
+			,share_use_yn = #{shareUseYn}
+			,verif_use_yn = #{verifUseYn}
+			,numbering_time = #{numberingTime}
+			,numbering_reg = #{numberingReg}
+		WHERE cust_id = #{custId}
+	</update>
+	
+	<select id="selectConfig" parameterType="string" resultType="config">
+		SELECT
+			 cust_id
+			,agree_use_yn
+			,pre_use_yn
+			,dcrb_use_yn
+			,sub_use_yn
+			,view_use_yn
+			,ref_use_yn
+			,agree_order
+			,modifyer
+			,modify_time
+			,ret_time
+			,share_use_yn
+			,verif_use_yn
+			,numbering_time
+			,numbering_reg
+		FROM approval_config
+		WHERE cust_id = #{custId}
+	</select>
+</mapper>

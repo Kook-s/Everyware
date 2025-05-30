@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.document.mapper.TemplateMapper">
+
+	<!-- 템플릿 Map -->
+	<!-- <resultMap type="templateCategory" id="templateCategoryMap">
+		<result property="clsfNm" column="clsf_nm"/>
+		<collection property="templates" resultMap="templateMap"/>
+	</resultMap>
+	<resultMap type="template" id="templateMap">
+		<result property="tmpltCd" column="tmplt_cd"/>
+		<result property="tmpltNm" column="tmplt_nm"/>
+		<result property="useYn" column="use_yn"/>
+		<result property="serviceClassNm" column="service_class_nm"/>
+		<result property="itemMethodNm" column="item_method_nm"/>
+	</resultMap>
+
+	템플릿 리스트 select
+	<select id="selectTemplateList" resultMap="templateCategoryMap">
+		SELECT 
+			clsf_nm
+			,tmplt_cd
+			,tmplt_nm
+			,use_yn
+			,service_class_nm
+			,item_method_nm
+		FROM template
+		WHERE use_yn = 'Y'
+		ORDER BY clsf_nm, tmplt_nm
+	</select>
+	
+	템플릿 select
+	<select id="selectTemplate" parameterType="int" resultType="template">
+		select 
+			clsf_nm
+			,tmplt_cd
+			,tmplt_nm
+			,tmplt_cn
+			,use_yn
+		FROM template
+		WHERE tmplt_cd = #{tmpltCd}
+	</select> -->
+	
+	<!-- vacation item 리스트 select -->
+	<select id="selectVacationItems" parameterType="string" resultType="vacation">
+		SELECT
+			 vi_no
+			,vi_type
+			,vi_day
+			,vi_memo
+			,cust_id
+		FROM vac_item
+		WHERE cust_id = #{custId}
+	</select>
+	
+</mapper>

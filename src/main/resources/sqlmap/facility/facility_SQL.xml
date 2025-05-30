@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.facility.mapper.FacilityMapper">
+	<!-- 차량 insert -->
+	<insert id="insertCar" parameterType="car">
+		insert into car(
+			car_sn, vhr_no, carmdl_nm, car_yr, total_mile, fclt_stts, cust_id, car_dtl_cn
+		) values (
+			seq_car.nextval, #{vhrNo}, #{carmdlNm}, #{carYr}, #{totalMile}, #{fcltStts}, #{custId}, #{carDtlCn}
+		)
+	</insert>
+	
+	<!-- 모든 차량 select (조회 조건 추가) -->
+	<select id="selectCarList" parameterType="string" resultType="car">
+		select car_sn, vhr_no, carmdl_nm, car_yr, total_mile, fclt_stts, cust_id, car_dtl_cn
+		from car
+		where cust_id = #{custId}
+	</select>
+	
+	<!-- 차량 update -->
+	<update id="updateCar" parameterType="car">
+		update car
+		set
+			vhr_no = #{vhrNo},
+			carmdl_nm = #{carMdlNm},
+			car_yr = #{carYr},
+			total_mile = #{totalMile},
+			fclt_stts = #{fcltStts},
+			car_dtl_cn = #{carDtlCn}
+		where car_sn = #{carSn}
+	</update>
+	
+	<!-- 차량 주행거리 update -->
+	<update id="updateCarMile" parameterType="car">
+		update car
+		set
+			total_mile = #{totalMile}
+		where car_sn = #{carSn}
+	</update>
+	
+	<!-- 차량 상태 update -->
+	<update id="updateCarStts" parameterType="car">
+		update car
+		set
+			fclt_stts = #{fcltStts}
+		where car_sn = #{carSn}
+	</update>
+	
+	<!-- 운행기록부 insert -->
+	<insert id="insertDrvRecord" parameterType="drvRecord">
+		insert into driving_record(
+			drv_rec_sn, car_sn, emp_id, use_dt, bfr_mile, aftr_mile,
+			drv_mile, comt_mile, work_mile, rmrk_cn, cust_id
+		) values (
+			seq_driving_record.nextval, #{carSn}, #{empId}, #{useDt},
+			#{bfrMile}, #{aftrMile}, #{drvMile}, #{comtMile},
+			#{workMile}, #{rmrkCn}, #{custId}
+		)
+	</insert>
+	
+	<!-- 회의실 insert -->
+	<insert id="insertMtgRoom" parameterType="mtgRoom">
+		insert into meeting_room(
+			mtg_room_no, cust_id, mtg_room_nm, mtg_room_pstn,
+			mtg_room_dtl_cn, fclt_stts
+		) values (
+			seq_meeting_room.nextval, #{custId}, #{mtgRoomNm},
+			#{mtgRoomPstn}, #{mtgRoomDtlCn}, #{fcltStts}
+		)
+	</insert>
+	
+	<!-- 모든 회의실 select (조회 조건 추가) -->
+	<select id="selectMtgRoomList" parameterType="string" resultType="mtgRoom">
+		select
+			mtg_room_no, cust_id, mtg_room_nm, mtg_room_pstn,
+			mtg_room_dtl_cn, fclt_stts
+		from meeting_room
+		where cust_id = #{custId}
+	</select>
+	
+	<!-- 회의실 update -->
+	<update id="updateMtgRoom" parameterType="int">
+		update 
+		set
+			mtg_room
+		where mtg_room_no = #{mtgRoomNo}
+	</update>
+</mapper>

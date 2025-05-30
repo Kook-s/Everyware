@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.todo.mapper.TodoMapper">
+
+	<!-- Todo 전체 List-->
+	<select id="getTodoList" resultType="todo">
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.getList -->
+		SELECT
+			td_no
+			, emp_id
+			, td_ttl
+			, td_cn
+			, td_state
+		FROM todolist
+		WHERE emp_id = #{empId}
+		ORDER BY td_no DESC
+	</select>
+	
+	<!-- Todo 추가 -->
+	<insert id="addTodo" parameterType="todo">
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.addTodo -->
+		INSERT INTO todolist(
+			td_no
+			, emp_id
+			, td_ttl
+			, td_cn
+			, td_state
+		) VALUES (
+			seq_todolist.NEXTVAL
+			, #{empId}
+			, #{tdTtl}
+			, #{tdCn}
+			, #{tdState}
+		)
+	</insert>
+	
+	<!-- Todo 삭제 -->
+	<delete id="delTodo">
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.delTodo -->
+		DELETE FROM todolist
+		WHERE td_no = #{tdNo} 
+	</delete>
+	
+	<!-- Todo 상세보기 -->
+	<select id="getOneTodo" parameterType="int" resultType="todo">
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.getOneTodo -->
+		SELECT
+			td_no
+			, emp_id
+			, td_ttl
+			, td_cn
+			, td_state
+		FROM todolist
+		WHERE td_no = #{tdNo}
+	</select>
+	
+	<!-- 수정 -->
+	<update id="editTodo" parameterType="todo">
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.editTodo -->
+		UPDATE todolist
+		SET
+			td_ttl = #{tdTtl}
+			,td_cn = #{tdCn}
+			,td_state = #{tdState}
+		WHERE td_no = #{tdNo}
+	</update>
+	
+	<!-- Todo 전체건수 -->
+	<select id="getTotalRecodeCount" resultType="int" >
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.getTotalRecodeCount -->
+		SELECT COUNT(td_no)
+		FROM todolist
+		WHERE emp_id = #{empId}
+	</select>
+	
+	<!-- Todo ToDo건수 -->
+	<select id="getTotalTodoCount" resultType="int" >
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.getTotalTodoCount -->
+		SELECT COUNT(td_no)
+		FROM todolist
+		WHERE td_state = 'To Do'
+		AND emp_id = #{empId}
+	</select>
+	
+	<!-- Todo InProgress건수 -->
+	<select id="getTotalInProgressCount" resultType="int" >
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.getTotalInProgressCount -->
+		SELECT COUNT(td_no)
+		FROM todolist
+		WHERE td_state = 'In Progress'
+		AND emp_id = #{empId}
+	</select>
+	
+	<!-- Todo Done건수 -->
+	<select id="getTotalDoneCount" resultType="int" >
+	<!-- kr.or.everyware.everyware.todo.mapper.TodoMapper.getTotalDoneCount -->
+		SELECT COUNT(td_no)
+		FROM todolist
+		WHERE td_state = 'Done'
+		AND emp_id = #{empId}
+	</select>
+	
+	
+</mapper>

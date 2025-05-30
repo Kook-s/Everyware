@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.work.mapper.WorkStatsMapper">
+	
+	<!-- 근로제그룹 조회 -->
+	<select id="getWorkGroup" parameterType="String" resultType="workGroup">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkStatsMapper.getWorkGroup -->
+		SELECT
+			wg.group_nm
+			,TO_CHAR(wg.group_work_bgng_dt, 'HH24:MI') AS group_work_bgng_dt
+			,TO_CHAR(wg.group_work_end_dt, 'HH24:MI') AS group_work_end_dt
+			,TO_CHAR(wg.group_rest_bgng_dt, 'HH24:MI') AS group_rest_bgng_dt
+			,TO_CHAR(wg.group_rest_end_dt, 'HH24:MI') AS group_rest_end_dt
+		FROM work_group wg, employee e
+		WHERE e.emp_id = #{empId}
+		AND e.group_no = wg.group_no
+	</select>
+	
+	<!-- 오늘의 근로 -->
+	<select id="getWorkToday" parameterType="String" resultType="work">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkStatsMapper.getWorkToday -->
+		SELECT
+		    w.work_no
+		    , w.emp_id
+		    , w.work_dt
+		    ,TO_CHAR(w.work_bgng_dt, 'HH24:MI:ss') AS work_bgng_dt
+		    ,TO_CHAR(w.work_end_dt, 'HH24:MI:ss') AS work_end_dt
+		    , w.work_state
+		FROM work w
+		WHERE w.emp_id = #{empId}
+		AND TO_CHAR(w.work_bgng_dt, 'YYYY/MM/DD') = TO_CHAR(SYSDATE, 'YYYY/MM/DD')
+	</select>
+	
+	
+</mapper>

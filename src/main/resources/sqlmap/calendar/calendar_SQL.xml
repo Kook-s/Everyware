@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.calendar.mapper.CalendarMapper">
+	
+	<resultMap type="schedule" id="scheduleAndMember">
+		<id property="schdlId" column="schdl_id"/>
+		<result property="schdlId" column="schdl_id"/>
+		<result property="schdlTtl" column="schdl_ttl"/>
+		<result property="schdlType" column="schdl_type"/>
+		<result property="schdlCn" column="schdl_Cn"/>
+		<result property="schdlBgngDt" column="schdl_bgng_dt"/>
+		<result property="schdlEndDt" column="schdl_end_dt"/>
+		<result property="empId" column="emp_id"/>
+		<result property="schdlColor" column="schdl_color"/>
+		<result property="schdlAllday" column="schdl_allday"/>
+		
+		<collection property="memberList" javaType="List" ofType="employee">
+			<id property="empId" column="MEM_id"/>
+			<result property="empId" column="mem_id"/>
+			<result property="empPw" column="mem_pw"/>
+			<result property="empName" column="mem_name"/>
+			<result property="deptId" column="dept_id"/>
+			<result property="jbgdId" column="jbgd_id"/>
+			<result property="empBirth" column="mem_birth"/>
+			<result property="empTel" column="mem_tel"/>
+			<result property="empMail" column="mem_mail"/>
+			<result property="empPost" column="mem_post"/>
+			<result property="empAddr1" column="mem_addr1"/>
+			<result property="empAddr2" column="mem_addr2"/>
+			<result property="empDate" column="mem_date"/>
+			<result property="empIdno" column="mem_idno"/>
+			<result property="empVac" column="mem_vac"/>
+			<result property="empProfile" column="mem_profile"/>
+			<result property="groupNo" column="group_no"/>
+			<result property="custId" column="cust_id"/>
+			<result property="authrtId" column="authrt_id"/>
+			
+			<result property="deptNm" column="dept_nm"></result>
+			<result property="jbgdNm" column="jbgd_nm"></result>
+		</collection>
+	</resultMap>
+
+	
+
+
+
+
+
+
+	<select id="getEventList" parameterType="employee" resultMap="scheduleAndMember">
+select a.*, C.EMP_ID AS "MEM_ID", C.EMP_PW AS "MEM_PW", C.DEPT_ID, C.JBGD_ID, C.EMP_NAME AS "MEM_NAME",c.emp_profile as "MEM_PROFILE", C.EMP_TEL AS "MEM_TEL", C.EMP_MAIL AS "MEM_MAIL", D.JBGD_NM,e.dept_id,e.dept_nm
+from 
+    (select * from schedule
+     where (
+             emp_id in (select emp_id from employee where cust_id=#{custId}) and ((dept_id = #{deptId} and schdl_type=2) or schdl_type=3 or (emp_id = #{empId} and schdl_type=1))
+            )) a
+                     left outer join schedule_member b on (a.schdl_id=b.schdl_id)
+                     left outer join employee c on(b.emp_id=c.emp_id)
+                     left outer join position d on(c.jbgd_id=d.jbgd_id)
+                     left outer join department e on(e.dept_id=c.dept_id)
+
+	</select>
+	<select id="getDeactiveEventList" parameterType="String" resultType="schedule">
+	select * from schedule where emp_id=#{empId} and schdl_bgng_dt is null
+	order by schdl_id desc
+	</select>
+	<insert id="insertSchedule" parameterType="schedule">
+		<selectKey keyProperty="schdlId" resultType="int"  order="BEFORE">
+			select seq_schedule.nextval from dual
+		</selectKey>
+			insert into schedule 
+			values(
+				#{schdlId},#{schdlTtl},#{schdlType},#{schdlCn}, null, null,#{empId},#{schdlColor},null,#{deptId}      
+			)
+	</insert>
+	<delete id="deleteSchedule" parameterType="int">
+		delete from schedule where schdl_id=#{schdlId}
+	</delete>
+	<update id="modifySchedule" parameterType="schedule">
+		update schedule
+		<set>
+			<if test="schdlType!=null">SCHDL_TYPE=#{schdlType},</if>
+			<if test="schdlTtl !=null">SCHDL_TTL=#{schdlTtl},</if>
+			<if test="schdlCn !=null">SCHDL_CN=#{schdlCn},</if>
+			<if test="schdlBgngDt !=null">SCHDL_BGNG_DT=#{schdlBgngDt},</if>
+			<if test="schdlEndDt !=null">SCHDL_END_DT=#{schdlEndDt},</if>
+			<if test="empId !=null">EMP_ID=#{empId},</if>
+			<if test="schdlColor !=null">SCHDL_COLOR=#{schdlColor},</if>
+			<if test="schdlAllday !=null">SCHDL_ALLDAY=#{schdlAllday},</if>
+		</set>
+		where SCHDL_ID=#{schdlId}
+	</update>
+	<select id="getEmpNameById" parameterType="String" resultType="String">
+		select emp_Name from employee where emp_id=#{empId}
+	</select>
+	<select id="getDeptProfileList" parameterType="employee" resultType="employee">
+		select a.emp_id, a.emp_name, a.emp_mail, a.emp_profile, b.jbgd_nm, c.dept_nm
+		from
+		    (select * 
+		    from employee 
+		    where cust_id= #{custId} and dept_id=#{deptId}) a 
+		    left outer join position b on(a.JBGD_ID=B.JBGD_ID)
+		    left outer join department c on(a.dept_id = c.dept_id)
+	</select>
+	<select id="getAllProfileList" parameterType="employee" resultType="employee">
+		select a.emp_id, a.emp_name, a.emp_mail, a.emp_profile, b.jbgd_nm, c.dept_nm
+		from
+		    (select * 
+		    from employee 
+		    where cust_id= #{custId}) a 
+		    left outer join position b on(a.JBGD_ID=B.JBGD_ID)
+		    left outer join department c on(a.dept_id = c.dept_id)
+	</select>
+	<insert id="insertScheduleMember" parameterType="map">
+		insert into schedule_member values(
+			#{schdlId},#{empId}
+		)
+	</insert>
+	<delete id="deleteScheduleMember" parameterType="int">
+		delete from schedule_member
+		where schdl_id=#{schdlId}
+	</delete>
+	<select id="getCompanyEventList" parameterType="String" resultType="schedule">
+		select a.*, b.cust_id
+		from(
+		schedule a join employee b on(a.emp_id = b.emp_id and b.cust_id=#{custId} and schdl_TYPE=3))
+	</select>
+	<select id="getWeekEventCount" parameterType="map" resultType="int">
+	select count(a.schdl_id)
+	from(SELECT *
+	    FROM schedule
+	  <![CDATA[  WHERE schdl_bgng_dt <=#{end} 
+	      AND schdl_end_dt >= #{start}]]>
+	      and (schdl_type=3 or (schdl_type=2 and dept_id=#{deptId}) or (schdl_type=1 and emp_id=#{empId}))
+	) a
+	where a.emp_id in(select emp_id from employee where cust_id=#{custId})
+	</select>
+    <select id="getTodayEventCount" parameterType="map" resultType="int">
+    select count(a.schdl_id)
+	from(SELECT *
+	    FROM schedule
+	    where sysdate between schdl_bgng_dt and schdl_end_dt
+	      and (schdl_type=3 or (schdl_type=2 and dept_id=#{deptId}) or (schdl_type=1 and emp_id=#{empId}))
+	) a
+	where a.emp_id in(select emp_id from employee where cust_id=#{custId})
+	</select>                
+    <select id="getTomorrowEevntCount" parameterType="map" resultType="int">
+     select count(a.schdl_id)
+	from(SELECT *
+	    FROM schedule
+	    where (sysdate+1) between schdl_bgng_dt and schdl_end_dt
+	      and (schdl_type=3 or (schdl_type=2 and dept_id=#{deptId}) or (schdl_type=1 and emp_id=#{empId}))
+	) a
+	where a.emp_id in(select emp_id from employee where cust_id=#{custId})
+	</select>                         
+</mapper>

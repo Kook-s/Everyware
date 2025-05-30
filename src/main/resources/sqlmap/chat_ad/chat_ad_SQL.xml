@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.chat.mapper.AdminChatMapper">
+
+	  <sql id="roomNameCond">
+	  	<if test="roomName!=null and roomName!=''">
+	  		and room_nm like '%'||#{roomName}||'%'
+	  	</if>
+	  </sql>
+	  <sql id="nameCond">
+	  	<if test="name!=null and name!=''">
+	  		and emp_name like '%'||#{name}||'%'
+	  	</if>
+	  </sql>
+	  <sql id="fileNameCond">
+	  	<if test="fileName!=null and fileName!=''">
+	  		and file_nm like '%'||#{fileName}||'%'
+	  	</if>
+	  </sql>
+	  <sql id="ContentCond">
+	  	<if test="content!=null and content!=''">
+	  		and msg_cn like '%'||#{content}||'%'
+	  	</if>
+	  </sql>
+	  <sql id="dateCond">
+		<if test="sdate!=null and edate==null">
+			and msg_crt_dt between #{sdate} and sysdate
+		</if>
+		<if test="sdate==null and edate!=null">
+			<![CDATA[ and msg_crt_dt <=#{edate} ]]>
+		</if>
+		<if test="sdate!=null and edate!=null">
+			and msg_crt_dt between #{sdate} and #{edate}
+		</if>
+	</sql>
+	  <sql id="isLately">
+		<if test="isLately != null and isLately =='날짜 내림차순'">
+			order by msg_id desc
+		</if>
+		<if test="isLately != null and isLately =='날짜 오름차순'">
+			order by msg_id asc
+		</if>
+	  </sql>
+	<select id="selectChatLogCount" parameterType="chatLogPaging" resultType="int">
+		select count(msg_id)
+		from(
+		    select d.*,row_number() over (order by msg_id asc) rnum 
+		    from(
+		        select a.*,b.emp_name,b.emp_profile,c.room_nm
+		        from message a
+		        join employee b on(a.emp_id = b.emp_id and b.cust_id=#{custId})
+		        join chatroom c on(a.room_id= c.room_id)
+		        where 1=1<include refid="nameCond"></include><include refid="ContentCond"></include><include refid="dateCond"></include><include refid="roomNameCond"></include>
+		    ) d
+		)e
+	</select>
+	<select id="selectChatLogList" parameterType="chatLogPaging" resultType="chatLog">
+		select msg_id,msg_cn,msg_crt_dt,msg_type,e.emp_id,emp_name,emp_profile,e.room_id,e.room_nm
+		from(
+		    select d.*,row_number() over (<include refid="isLately"></include>) rnum 
+		    from(
+		        select a.*,b.emp_name,b.emp_profile,c.room_nm
+		        from message a
+		        join employee b on(a.emp_id = b.emp_id and b.cust_id=#{custId})
+		        join chatroom c on(a.room_id= c.room_id)
+		        where 1=1<include refid="nameCond"></include><include refid="ContentCond"></include><include refid="dateCond"></include><include refid="roomNameCond"></include>
+		    ) d
+		)e
+		<![CDATA[
+			where rnum >= #{startRow} and rnum <=#{endRow}
+		]]>
+	</select>
+	<select id="selectImgChatLogCount" parameterType="imgChatLogPaging" resultType="int">
+		select count(msg_id)
+		from(
+		    select msg_id, msg_crt_dt, d.room_id, c.emp_id, c.emp_name, b.atch_file_no, b.atch_file_seq, b.file_nm,b.file_sz,row_number() over (order by msg_id asc) rnum 
+		    from message a 
+		    join ATTACH_FILE b on(a.atch_file_no = b.atch_file_no <include refid="fileNameCond"></include> <include refid="dateCond"></include>)
+		    join employee c on(a.emp_id=c.emp_id and c.cust_id=#{custId} <include refid="nameCond"></include>)
+		    join chatroom d on(a.room_id = d.room_id <include refid="roomNameCond"></include>)
+		)a
+	</select>
+	<select id="selectImgChatLogList" parameterType="imgChatLogPaging" resultType="imgChatLog">
+		select  msg_id, msg_crt_dt, room_id,room_nm ,a.emp_id, a.emp_name, a.atch_file_no, a.atch_file_seq, a.file_nm,a.file_sz
+		from(
+		    select msg_id, msg_crt_dt, d.room_id, room_nm, c.emp_id, c.emp_name, b.atch_file_no, b.atch_file_seq, b.file_nm,b.file_sz,row_number() over (<include refid="isLately"></include>) rnum 
+ 			from message a 
+		    join ATTACH_FILE b on(a.atch_file_no = b.atch_file_no <include refid="fileNameCond"></include> <include refid="dateCond"></include>)
+		    join employee c on(a.emp_id=c.emp_id and c.cust_id=#{custId} <include refid="nameCond"></include>)
+		    join chatroom d on(a.room_id = d.room_id <include refid="roomNameCond"></include>)
+		)a
+		<![CDATA[
+			where rnum >= #{startRow} and rnum <=#{endRow}
+		]]>
+	</select>
+
+	<resultMap type="message" id="roomLogMap">
+		<id property="msgId" column="msg_id"/>
+		<result property="msgId" column="msg_id"/>
+		<result property="msgCn" column="msg_cn"/>
+		<result property="msgCrtDt" column="msg_crt_dt"/>
+		<result property="msgType" column="msg_type"/>
+		<result property="atchFileNo" column="atch_file_no"/>
+		<result property="roomNm" column="room_nm"/>
+		<association property="employee" resultMap="roomLogEmpMap"></association>
+	</resultMap>
+	
+	<resultMap type="employee" id="roomLogEmpMap">
+		<id property="empId" column="emp_Id"/>
+		<result property="empId" column="emp_Id"/>
+		<result property="empName" column="emp_name"/>
+		<result property="empProfile" column="emp_profile"/>
+	</resultMap>
+	
+	<select id="selectRoomLogs" parameterType="int" resultMap="roomLogMap">
+		select a.msg_id,a.msg_cn,a.msg_crt_dt,a.msg_type,a.atch_file_no,d.room_nm,c.emp_id,c.emp_name,c.emp_profile
+		from message a
+		join (select room_id 
+		        from message 
+		        where msg_id=#{msgId})b on (a.room_Id=b.room_id)
+		join chatroom d on(a.room_id = d.room_id)
+		join employee c on(a.emp_id=c.emp_id)
+		order by a.msg_id
+	</select>
+</mapper>

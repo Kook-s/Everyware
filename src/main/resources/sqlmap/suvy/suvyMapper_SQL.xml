@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.suvy.mapper.SuvyMapper">
+	<!-- 설문 -->
+	<resultMap type="suvy" id="suvyMap">
+		<id property="suvyNo" column="suvy_no" />
+		<result property="suvyNo" column="suvy_no"/>
+		<result property="empId" column="emp_id"/>
+		<result property="suvyTtl" column="suvy_ttl"/>
+		<result property="suvyCn" column="suvy_cn"/>
+		<result property="suvyDt" column="suvy_dt"/>
+		<result property="suvyBgngDt" column="suvy_bgng_dt"/>
+		<result property="suvyEndDt" column="suvy_end_dt"/>
+		<result property="suvyState" column="suvy_state"/>
+		<result property="suvySigned" column="suvy_signed"/>
+		<result property="suvyDuplicate" column="suvy_duplicate"/>
+		
+		<collection property="suvyItemList" resultMap="suvyItemMap"/>
+<!-- 		<collection property="suvyAnswerList" resultMap="suvyAnswerMap"/> -->
+	</resultMap>
+	
+	<!-- 설문항목 -->
+	<resultMap type="suvyItem" id="suvyItemMap">
+		<id property="siNo" column="si_no" />
+		<id property="suvyNo" column="suvy_no"/>
+		<result property="siNo" column="si_no"/>
+		<result property="suvyNo" column="suvy_no"/>
+		<result property="siCn" column="si_cn"/>
+		<result property="atchFileNo" column="atch_file_no"/>
+	</resultMap>
+	
+	<!-- 설문답변 -->
+	<resultMap type="suvyAnswer" id="suvyAnswerMap">
+		<id property="saNo" column="sa_no"/>
+		<result property="saNo" column="sa_no"/>
+		<result property="suvyNo" column="suvy_no"/>
+		<result property="siNo" column="si_no"/>
+		<result property="empId" column="emp_id"/>
+		<result property="saMemo" column="sa_memo"/>
+	</resultMap>
+		
+	<!-- 설문 전체건수 -->
+	<select id="getSuvyCount" parameterType="suvyPaging" resultType="int">
+	<!-- kr.or.everyware.everyware.suvy.mapper.SuvyMapper.getSuvyCount -->
+		SELECT
+		    count(f.suvy_no)
+		FROM(
+		    select e.suvy_no ,e.emp_id,e.suvy_ttl,e.suvy_cn,e.suvy_dt,e.suvy_bgng_dt,e.suvy_end_dt,e.suvy_state,e.suvy_signed,e.suvy_duplicate,e.part_yn, row_number() over (ORDER BY e.suvy_no DESC) rnum
+		    from(
+		        select 
+		            a.suvy_no ,a.emp_id,a.suvy_ttl,a.suvy_cn,a.suvy_dt,a.suvy_bgng_dt,a.suvy_end_dt,a.suvy_state,a.suvy_signed,a.suvy_duplicate,part_yn
+		        FROM suvy a join employee b on(a.emp_id=b.emp_id and b.cust_id=#{custId})
+		        <if test="subject!=null and subject=='받은설문'">
+		        	join suvy_participants c on(a.suvy_no = c.suvy_no and c.emp_Id=#{empId})
+		        </if>
+		        <if test="subject!=null and subject=='전체'">
+		        	left outer join suvy_participants c on(a.suvy_no = c.suvy_no and c.emp_Id=#{empId})
+		        </if>
+		        where 1=1
+		        <if test="suvyTtl!=null and suvyTtl!=''">and a.suvy_ttl like '%'||#{suvyTtl}||'%'</if>
+		        <if test="sdate!=null and sdate!=''"> <![CDATA[and suvy_bgng_dt>=#{sdate}]]></if>
+		        <if test="edate!=null and edate!=''"><![CDATA[and suvy_end_dt<=#{edate}]]></if>
+		        <if test="suvyState>0">and suvy_state = #{suvyState}</if>
+		        <if test="empName!=null and empName!=''">and b.emp_name like '%'||#{empName}||'%'</if>
+		        ORDER BY a.suvy_no DESC
+		    )e
+		)f
+	</select>
+	
+	<resultMap type="suvy" id="suvyPagingMap">
+		<id property="suvyNo" column="suvy_no" />
+		<result property="suvyNo" column="suvy_no"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empName" column="emp_name"/>
+		<result property="suvyTtl" column="suvy_ttl"/>
+		<result property="suvyCn" column="suvy_cn"/>
+		<result property="suvyDt" column="suvy_dt"/>
+		<result property="suvyBgngDt" column="suvy_bgng_dt"/>
+		<result property="suvyEndDt" column="suvy_end_dt"/>
+		<result property="suvyState" column="suvy_state"/>
+		<result property="suvySigned" column="suvy_signed"/>
+		<result property="suvyDuplicate" column="suvy_duplicate"/>
+		<result property="partYn" column="part_yn"/>
+		
+		 <collection property="siNoList" ofType="java.lang.Integer">
+		    <result column="si_No_List" />
+		  </collection>
+	</resultMap>
+	
+	<!-- 설문목록 페이징 -->
+	<select id="getSuvyList" parameterType="suvyPaging" resultMap="suvyPagingMap">
+	<!-- kr.or.everyware.everyware.suvy.mapper.SuvyMapper.getSuvyList -->
+		SELECT
+		    f.*
+		FROM(
+		    select e.suvy_no ,e.emp_id,e.emp_name,e.suvy_ttl,e.suvy_cn,e.suvy_dt,e.suvy_bgng_dt,e.suvy_end_dt,e.suvy_state,e.suvy_signed,e.suvy_duplicate,e.part_yn,e.si_No_List, DENSE_RANK() over (ORDER BY e.suvy_no DESC) rnum
+		    from(
+		        select 
+		            a.suvy_no ,a.emp_id,a.suvy_ttl,a.suvy_cn,a.suvy_dt,a.suvy_bgng_dt,a.suvy_end_dt,a.suvy_state,a.suvy_signed,a.suvy_duplicate,b.emp_name,part_yn,d.si_no as si_No_List
+		        FROM suvy a join employee b on(a.emp_id=b.emp_id and b.cust_id=#{custId})
+		        <if test="subject!=null and subject=='받은설문'">
+		        	join suvy_participants c on(a.suvy_no = c.suvy_no and c.emp_Id=#{empId})
+		        </if>
+		        <if test="subject!=null and subject=='전체'">
+		        	left outer join suvy_participants c on(a.suvy_no = c.suvy_no and c.emp_Id=#{empId})
+		        </if>
+		        left outer join suvy_answer d on(a.suvy_no=d.suvy_no and d.emp_Id=#{empId})
+		        where 1=1
+		        <if test="suvyTtl!=null and suvyTtl!=''">and a.suvy_ttl like '%'||#{suvyTtl}||'%'</if>
+		        <if test="sdate!=null and sdate!=''"> <![CDATA[and suvy_bgng_dt>=#{sdate}]]></if>
+		        <if test="edate!=null and edate!=''"><![CDATA[and suvy_end_dt<=#{edate}]]></if>
+		        <if test="suvyState>0">and suvy_state = #{suvyState}</if>
+		        <if test="empName!=null and empName!=''">and b.emp_name like '%'||#{empName}||'%'</if>
+		        
+		        ORDER BY a.suvy_no DESC
+		    )e
+		)f
+		<![CDATA[
+			WHERE f.rnum >= #{startRow} 
+			AND f.rnum <= #{endRow}
+		]]>
+
+	</select>
+	
+	<!-- 설문항목 -->
+	<select id="getSuvyItemList" resultType="suvyItem" parameterType="int">
+		SELECT
+			si.suvy_no
+			, si.si_no
+			, si.si_cn
+			, si.atch_file_no
+		FROM suvy_item si
+		WHERE si.suvy_no = #{suvyNo}
+	</select>
+	
+	<!-- 설문등록 -->
+	<insert id="addSuvy" parameterType="suvy" useGeneratedKeys="true">
+	<!-- kr.or.everyware.everyware.suvy.mapper.SuvyMapper.addSuvy -->
+		<selectKey keyColumn="suvyNo" keyProperty="suvyNo" resultType="int" order="BEFORE">
+			SELECT 
+				seq_suvy.NEXTVAL AS suvyNo 
+			FROM dual
+		</selectKey>
+		
+		INSERT INTO suvy(
+    suvy_no
+    , emp_id
+    , suvy_ttl
+    , suvy_cn
+    , suvy_dt
+    , suvy_bgng_dt
+    , suvy_end_dt
+    , suvy_state
+    , suvy_signed
+    , suvy_duplicate
+) VALUES (
+    #{suvyNo}
+    , #{empId}
+    , #{suvyTtl}
+    , #{suvyCn}
+    , sysdate
+    , #{suvyBgngDt}
+    , #{suvyEndDt}
+    , CASE
+   <![CDATA[     WHEN sysdate BETWEEN #{suvyBgngDt} AND TO_DATE(#{suvyEndDt}, 'YYYY/MM/DD') + INTERVAL '1' DAY THEN 1
+        WHEN sysdate < #{suvyBgngDt} THEN 4
+        WHEN sysdate > TO_DATE(#{suvyEndDt}, 'YYYY/MM/DD') + INTERVAL '1' DAY THEN 2
+        ELSE 4 -- 기본값]]>
+      END
+    , #{suvySigned}
+    , #{suvyDuplicate}
+)
+	</insert>
+	
+	<!-- 설문항목 등록 -->
+	<insert id="addSuvyItem" parameterType="suvyItem">
+		INSERT INTO suvy_item(
+			si_no
+			, suvy_no
+			, si_cn
+		)VALUES
+		(
+			seq_suvy_item.NEXTVAL
+	 		, #{suvyNo}
+			, #{siCn}
+
+		)
+	</insert>
+
+
+	<!-- 설문 상세보기 -->
+	<select id="getOneSuvy" parameterType="int" resultMap="suvyMap">
+	<!-- kr.or.everyware.everyware.suvy.mapper.SuvyMapper.getOneSuvy -->
+		SELECT
+			s.suvy_no
+			, s.emp_id
+			, s.suvy_ttl
+			, s.suvy_cn
+			, s.suvy_dt
+			, s.suvy_bgng_dt
+			, s.suvy_end_dt
+			, s.suvy_state
+			, s.suvy_signed
+			, s.suvy_duplicate
+			, si.si_no
+			, si.si_cn
+		FROM suvy s, suvy_item si
+		WHERE s.suvy_no = #{suvyNo}
+		AND s.suvy_no = si.suvy_no
+	</select>
+	
+	<!-- 설문항목 삭제 -->
+	<delete id="delSuvyItem">
+	<!-- kr.or.everyware.everyware.suvy.mapper.SuvyMapper.delSuvyItem -->
+	DELETE FROM suvy_item
+	WHERE suvy_no = #{suvyNo}
+	</delete>
+	
+	<!-- 설문 삭제 -->
+	<delete id="delSuvy">
+	<!-- kr.or.everyware.everyware.suvy.mapper.SuvyMapper.delSuvy -->
+	DELETE FROM suvy
+	WHERE suvy_no = #{suvyNo}
+	</delete>
+	
+	<!-- 태기파이에 목록 넣기위한 employ select -->
+	<select id="getAllProfileList" parameterType="employee" resultType="employee">
+		select a.emp_id, a.emp_name, a.emp_mail, a.emp_profile, b.jbgd_nm, c.dept_nm
+		from
+		    (select * 
+		    from employee 
+		    where cust_id= #{custId}) a 
+		    left outer join position b on(a.JBGD_ID=B.JBGD_ID)
+		    left outer join department c on(a.dept_id = c.dept_id)
+	</select>
+	
+	
+	<!-- 설문 대상자 처음 등록 -->
+	<insert id="insertSuvyMember" parameterType="map">
+		INSERT INTO suvy_participants(
+			 suvy_no
+			 , emp_ID
+			 , PART_YN
+		)VALUES
+		(
+	 		 #{suvyNo}
+	 		,#{empId} 
+			,'N'
+
+		)
+	</insert>
+	<update id="updateSuvyStart">
+		update suvy
+		set suvy_state = 1
+		<![CDATA[where suvy_state=4 and sysdate>suvy_bgng_dt and sysdate<suvy_end_dt+INTERVAL '1' DAY]]>
+	</update>
+	<update id="updateSuvyEnd">
+		update suvy
+		set suvy_state = 2
+		<![CDATA[where suvy_state=1 and sysdate>suvy_end_dt+INTERVAL '1' DAY]]>
+	</update>
+	
+	<select id="selectSuvyItem" parameterType="int" resultType="suvyItem">
+		select * from suvy_item
+		where si_no=#{siNo}
+	</select>
+	<insert id="insertSuvyAnswer" parameterType="suvyAnswer">
+		<selectKey keyProperty="saNo" resultType="int" order="BEFORE">
+			SELECT 
+				seq_suvy_answer.nextval
+			FROM dual
+		</selectKey>
+		insert into suvy_answer(sa_no,suvy_no,si_no,emp_id) values(
+			#{saNo}, #{suvyNo}, #{siNo}, #{empId}
+		)
+	</insert>
+	<update id="updatePartYn" parameterType="map">
+		update suvy_participants
+		set part_YN = 'Y'
+		where emp_id=#{empId} and suvy_no=#{suvyNo}
+	</update>
+	
+	<delete id="deleteMyAnswer" parameterType="map">
+		delete from suvy_answer
+		where suvy_no=#{suvyNo} and emp_id=#{empId}
+	</delete>
+	<select id="getSuvyAnswers" parameterType="map" resultType="suvyAnswer">
+		select * from suvy_answer
+		where suvy_no=#{suvyNo} and emp_id = #{empId}
+	</select>
+	<select id="getIsSuvyMember" parameterType="map" resultType="suvyParticipants">
+		select * from suvy_participants
+		where suvy_no=#{suvyNo} and emp_id = #{empId}
+	</select>
+	<delete id="deleteAnswers" parameterType="int">
+		delete from suvy_answer
+		where suvy_no=#{suvyNo}
+	</delete>
+	<delete id="deleteParticipants" parameterType="int">
+		delete from suvy_participants
+		where suvy_no=#{suvyNo}
+	</delete>
+	<select id="getPickCount" parameterType="suvyItem" resultType="int">
+		select count(*) from suvy_answer
+		where suvy_no=#{suvyNo} and si_no=#{siNo}
+	</select>
+	<select id="getSuvyPartCount" parameterType="int" resultType="int">
+		select count(*) from suvy_participants
+		where suvy_no=#{suvyNo} and part_yn='Y'
+	</select> 
+	<select id="getSuvySubCount" parameterType="int" resultType="int">
+		select count(*) from suvy_participants
+		where suvy_no=#{suvyNo}
+	</select> 
+</mapper>

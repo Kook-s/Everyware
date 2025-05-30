@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.work.mapper.WorkAdjMapper">
+
+	<!-- 날짜 검색 -->
+	<sql id="searchDate">
+		<if test="searchStartDate != null and searchEndDate != null">
+			<![CDATA[
+ 				AND w.work_bgng_dt >= (TO_DATE(#{searchStartDate},'yyyy-MM-dd'))
+				AND w.work_bgng_dt < (TO_DATE(#{searchEndDate},'yyyy-MM-dd')+1)
+			]]>
+		</if>
+	</sql>
+	
+	<!-- 근태조정 상태 검색 -->
+	<sql id="searchState">
+		<if test="searchState != null and searchState != '' and searchState != '전체'" >
+<!--  			AND (work_state LIKE '%'||#{searchState}||'%') -->
+ 			AND (a.prgrs_stts_cd LIKE '%'||#{searchState}||'%')
+		</if>
+	</sql>
+	
+	<!-- 전체건 -->
+	<select id="getTotalRecord" parameterType="workAdj" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkAdjMapper.getTotalRecord -->
+		SELECT
+			COUNT(b.work_no)
+		FROM(
+			SELECT 
+				a.*, row_number() OVER (ORDER BY a.aprv_sn DESC) rnum
+			FROM(
+				SELECT 
+					wa.aprv_sn
+					, wa.work_no
+					, w.work_dt
+					, a.atrz_dmnd_dt
+					, wa.wa_bgng_dt
+					, wa.wa_end_dt
+					, wa.wa_reason
+					, a.prgrs_stts_cd
+				FROM work w, work_adj wa, approval a
+				WHERE 1=1 
+				AND w.work_no = wa.work_no
+				AND wa.aprv_sn = a.aprv_sn
+				AND w.emp_id = #{empId}
+				<include refid="searchDate" />
+				<include refid="searchState" />
+				ORDER BY wa.aprv_sn DESC
+			) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} 
+			AND b.rnum <= #{endRow}
+		]]>
+	</select>
+	
+	
+	<!-- 사원의 근태조정목록 -->
+	<select id="getWorkAdjList" parameterType="workAdj" resultType="workAdj">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkAdjMapper.getWorkAdjList -->
+		SELECT
+			b.*
+		FROM(
+			SELECT 
+				a.*, row_number() OVER (ORDER BY a.aprv_sn DESC) rnum
+			FROM(
+				SELECT 
+					wa.aprv_sn
+					, wa.work_no
+					, w.work_dt
+					, a.atrz_dmnd_dt
+					, wa.wa_bgng_dt
+					, wa.wa_end_dt
+					, wa.wa_reason
+					, a.prgrs_stts_cd
+				FROM work w, work_adj wa, approval a
+				WHERE 1=1 
+				AND w.work_no = wa.work_no
+				AND wa.aprv_sn = a.aprv_sn
+				AND w.emp_id = #{empId}
+				<include refid="searchDate" />
+				<include refid="searchState" />
+				ORDER BY wa.aprv_sn DESC
+			) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} 
+			AND b.rnum <= #{endRow}
+		]]>
+	</select>
+	
+	<!-- 사원의 근태조정 전체건수 -->
+	<select id="getWorkAdjCount" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkAdjMapper.getWorkAdjCount -->
+		SELECT COUNT(wa.aprv_sn)
+		FROM work_adj wa
+			, approval a
+		WHERE wa.aprv_sn = a.aprv_sn
+		AND	a.emp_id = #{empId}
+		<include refid="searchDate" />
+	</select>
+	
+	<!-- 사원의 근태조정 승인건수 -->
+	<select id="getWorkAdjApprovalCount" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkAdjMapper.getWorkAdjApprovalCount -->
+		SELECT COUNT(wa.aprv_sn)
+		FROM work_adj wa, approval a
+		WHERE wa.aprv_sn = a.aprv_sn
+		AND	a.emp_id = #{empId}
+<!-- 		AND a.prgrs_stts_cd = ; -->
+		<include refid="searchDate" />
+	</select>
+	
+	<!-- 사원의 근태조정 미승인건수 -->
+	<select id="getWorkAdjNotApprovalCount" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkAdjMapper.getWorkAdjNotApprovalCount -->
+		SELECT COUNT(wa.aprv_sn)
+		FROM work_adj wa, approval a
+		WHERE wa.aprv_sn = a.aprv_sn
+		AND	a.emp_id = #{empId}
+<!-- 		AND a.prgrs_stts_cd = ; -->
+		<include refid="searchDate" />
+	</select>
+</mapper>

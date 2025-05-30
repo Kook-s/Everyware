@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.workGroup.mapper.WorkGroupMapper">
+
+	<!-- 근로제 조회 -->
+	<select id="getWorkGroup" parameterType="String" resultType="workGroup">
+	<!-- kr.or.everyware.admin.workGroup.mapper.WorkGroupMapper.getWorkGroup -->
+		SELECT
+		    wg.group_no AS group_no
+		    ,wg.cust_id
+		    ,wg.group_nm
+		    ,To_CHAR(wg.group_work_bgng_dt, 'HH24:MI') AS group_work_bgng_dt
+		    ,To_CHAR(wg.group_work_end_dt, 'HH24:MI') AS group_work_end_dt
+		    ,To_CHAR(wg.group_rest_bgng_dt, 'HH24:MI') AS group_rest_bgng_dt
+		    ,To_CHAR(wg.group_rest_end_dt, 'HH24:MI') AS group_rest_end_dt
+		    ,COUNT(e.emp_id) AS headCount
+		FROM work_group wg
+		LEFT JOIN employee e ON wg.group_no = e.group_no
+		WHERE wg.cust_id = #{custId}
+		GROUP BY wg.group_no, wg.cust_id, wg.group_nm, wg.group_work_bgng_dt, wg.group_work_end_dt, wg.group_rest_bgng_dt, wg.group_rest_end_dt
+		ORDER BY wg.group_no DESC
+	</select>
+	
+	<!-- 근로제 추가 -->
+	<insert id="addWorkGorup" parameterType="workGroup">
+	<!-- kr.or.everyware.admin.workGroup.mapper.WorkGroupMapper.addWorkGorup -->
+		INSERT INTO work_group(
+			group_no
+			, cust_id
+			, group_nm
+			, group_work_bgng_dt
+			, group_work_end_dt
+			, group_rest_bgng_dt
+			, group_rest_end_dt
+		) VALUES (
+			seq_work_group.NEXTVAL
+			, #{custId}	
+			, #{groupNm}
+			, TO_DATE(#{groupWorkBgngDt}, 'HH24:MI:SS')	
+			, TO_DATE(#{groupWorkEndDt}, 'HH24:MI:SS')	
+			, TO_DATE(#{groupRestBgngDt}, 'HH24:MI:SS')	
+			, TO_DATE(#{groupRestEndDt}, 'HH24:MI:SS')	
+		)
+	</insert>
+	
+	<!-- 상세보기 -->
+	<select id="getOneWorkGroup" parameterType="int" resultType="workGroup">
+	<!-- kr.or.everyware.admin.workGroup.mapper.WorkGroupMapper.getOneWorkGroup -->
+		SELECT
+			wg.group_no
+			, wg.cust_id
+			, wg.group_nm
+			, To_CHAR(wg.group_work_bgng_dt, 'HH24:MI') AS group_work_bgng_dt
+			, To_CHAR(wg.group_work_end_dt, 'HH24:MI') AS group_work_end_dt
+			, To_CHAR(wg.group_rest_bgng_dt, 'HH24:MI') AS group_rest_bgng_dt
+			, To_CHAR(wg.group_rest_end_dt, 'HH24:MI') AS group_rest_end_dt
+		FROM work_group wg
+		WHERE wg.group_no = #{groupNo}
+	</select>
+	
+	<!-- 수정 -->
+	<update id="editGroup" parameterType="workGroup">
+	<!-- kr.or.everyware.admin.workGroup.mapper.WorkGroupMapper.editGroup -->
+		UPDATE work_group
+		SET 
+			group_nm = #{groupNm}
+			, group_work_bgng_dt = TO_DATE(#{groupWorkBgngDt}, 'HH24:MI:SS')	
+			, group_work_end_dt = TO_DATE(#{groupWorkEndDt}, 'HH24:MI:SS')	
+			, group_rest_bgng_dt = TO_DATE(#{groupRestBgngDt}, 'HH24:MI:SS')	
+			, group_rest_end_dt = TO_DATE(#{groupRestEndDt}, 'HH24:MI:SS')	
+		WHERE group_no = #{groupNo}
+	</update>
+	
+	<!-- 삭제 -->
+	<delete id="delWorkGroup" parameterType="int">
+	<!-- kr.or.everyware.admin.workGroup.mapper.WorkGroupMapper.delWorkGroup -->
+		DELETE FROM work_group
+		WHERE group_no = #{groupNo}
+	</delete>
+	
+	<!-- 전체건수 -->
+	<select id="getWorkGroupCount" resultType="int">
+		SELECT COUNT(group_no)
+		FROM work_group
+		WHERE cust_id = #{custId}
+	</select>
+	
+	
+	
+</mapper>

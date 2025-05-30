@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.cmnt.mapper.CmntMapper">
+<!-- 
+	<insert id="insert" parameterType="cmnd" useGeneratedKeys="true">
+	 INSERT INTO CMNT (
+		   	 CMNT_ID
+			,EMP_ID
+			,PST_ID
+			,CMNT_CN
+			 CMNT_DT
+	) VALUES (
+		    SEQ_CMNT.nextval,
+		    #{cmntId},
+		    #{empId},
+		    #{pstId},
+		    #{cmntCn},
+		    sysdate,
+		  )
+</insert>
+	
+ -->
+  	<select id="selectCmntList" parameterType="cmntPaging" resultType="cmnt">
+     select
+          b.cmnt_id
+            ,b.pst_id
+            ,b.cmnt_cn
+            ,b.cmnt_dt
+            ,b.sender_id as emp_Id
+            ,b.emp_name
+            ,b.emp_profile
+            ,b.dept_nm
+            ,b.jbgd_nm
+      from(
+         select 
+            a.*,d.*,e.*,d.emp_id as sender_id,f.*, row_number() over (order by a.cmnt_id desc) rnum
+         from(
+            (select
+                cmnt_id
+            ,emp_id
+            ,pst_id
+            ,cmnt_cn
+            ,cmnt_dt
+            from cmnt
+            where 1=1
+            and pst_id=#{pstId}
+            order by emp_id desc)) a join employee d on(a.emp_id=d.emp_id)
+            left outer join department e on(d.dept_id=e.dept_id)
+            left outer join position f on(d.jbgd_id = f.jbgd_id)
+      ) b
+      <![CDATA[
+         where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+      ]]>
+        AND EXISTS (
+            SELECT 1
+            FROM board
+            WHERE CTGRY_NO = 2
+        )
+</select>
+
+
+
+
+<select id="selectCmntCount" parameterType="cmntPaging" resultType="int">
+SELECT 
+			count(pst_id)
+		 FROM cmnt 
+		 WHERE pst_id=#{pstId}
+
+</select>
+<!-- 	<select id="selectCmntList" parameterType="CpagingVO" resultType="cmnt">
+	   select
+         b.*
+      from(
+         select 
+            a.*, row_number() over (order by a.cmnt_id desc) rnum
+         from(
+            select
+                cmnt_id
+				,emp_id
+				,pst_id
+				,cmnt_cn
+				,cmnt_dt
+            from cmnt
+            where 1=1
+            and emp_id=#{empId}
+           <include refid="noticeSearch" />
+            order by emp_id desc
+         ) a
+      ) b
+      <![CDATA[
+         where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+      ]]>
+   </select> 
+		 -->
+		
+		
+		
+		
+ <insert id="cmntInsert" parameterType="cmnt" useGeneratedKeys="true">
+   <selectKey keyProperty="cmntId" resultType="int"  order="BEFORE">
+		select seq_cmnt.nextval from dual
+	</selectKey>
+   
+   INSERT 
+   INTO
+    	CMNT
+    (
+    CMNT_ID,
+     EMP_ID, 
+     PST_ID, 
+     CMNT_CN, 
+     CMNT_DT
+     )
+    VALUES (
+    #{cmntId}, #{empId}, #{pstId}, #{cmntCn}, sysdate)
+
+</insert>
+ 
+<delete id="cmntDelete" parameterType="int">
+	delete from cmnt
+	where cmnt_id=#{cmntId}
+</delete>
+
+</mapper>

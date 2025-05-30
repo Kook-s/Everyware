@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.fingerhr.mapper.FingerMapper">
+	
+	<resultMap id="empList" type="employee">
+		<id property="empId" column="emp_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empPw" column="emp_pw"/>
+		<result property="empName" column="emp_name"/>
+		<result property="deptId" column="dept_id"/>
+		<result property="jbgdId" column="jbgd_id"/>
+		<result property="empBirth" column="emp_birth"/>
+		<result property="empTel" column="emp_tel"/>
+		<result property="empMail" column="emp_mail"/>
+		<result property="empPost" column="emp_post"/>
+		<result property="empAddr1" column="emp_addr1"/>
+		<result property="empAddr2" column="emp_addr2"/>
+		<result property="empDate" column="emp_date"/>
+		<result property="empIdno" column="emp_idno"/>
+		<result property="empVac" column="emp_vac"/>
+		<result property="empProfile" column="emp_profile"/>
+		<result property="groupNo" column="group_no"/>
+		<result property="custId" column="cust_id"/>
+		<result property="authrtId" column="authrt_id"/>
+		<result property="empFid" column="emp_fid"/>
+
+		<association property="department" javaType="dept">
+			<result property="deptId" column="dept_id"/>
+			<result property="deptNm" column="dept_nm"/>
+			<result property="custId" column="cust_id"/>
+		</association>
+
+		<association property="position" javaType="posi">
+			<result property="jbgdId" column="jbgd_id"/>
+			<result property="jbgdNm" column="jbgd_nm"/>
+			<result property="custId" column="cust_id"/>
+		</association>
+		
+		<association property="work" javaType="work">
+			<result property="workNo" column="work_no"/>
+			<result property="empId" column="emp_id"/>
+			<result property="workDt" column="work_dt"/>
+			<result property="workBgngDt" column="work_bgng_dt"/>
+			<result property="workEndDt" column="work_end_dt"/>
+			<result property="workState" column="work_state"/>
+		</association>
+
+	</resultMap>
+
+	<select id="getFingerEmpList" parameterType="string" resultMap="empList">
+	 SELECT
+			a.emp_id
+			,a.emp_pw
+			,a.dept_id
+			,a.jbgd_id
+			,a.emp_name
+			,a.emp_birth
+			,a.emp_tel
+			,a.emp_mail
+			,a.emp_post
+			,a.emp_addr1
+			,a.emp_addr2
+			,a.emp_date
+			,a.emp_idno
+			,a.emp_vac
+			,a.emp_profile
+			,a.group_no
+			,a.cust_id
+			,a.authrt_id
+			,a.emp_fid
+			,b.*
+			,c.*
+			,d.work_no
+			,d.emp_id
+			,to_char(d.work_dt, 'yyyy-mm-dd' ) as work_dt
+			,d.work_bgng_dt
+			,d.work_end_dt
+			,d.work_state
+		FROM employee a, department b , position c , work d
+		WHERE a.dept_id = b.dept_id
+		AND a.jbgd_id = c.jbgd_id
+		AND a.emp_id = d.emp_id
+		AND a.cust_id = #{empId}
+		AND to_char( d.work_dt, 'yyyymmdd' ) = to_char( sysdate, 'yyyymmdd')
+		ORDER BY d.work_no desc
+	</select>
+	
+	<select id="getFingerEmp" parameterType="string" resultType="employee">
+		SELECT *
+		FROM employee
+		WHERE emp_fid = #{fingerId}
+	</select>
+	
+	<select id="getEmpWork" parameterType="string" resultType="int">
+		SELECT count(*)
+		FROM work
+		WHERE emp_id = #{fEmpId}
+		 AND to_char( work_dt, 'yyyymmdd' ) = to_char( sysdate, 'yyyymmdd')
+	</select>
+	
+	<insert id="addEmpWork" parameterType="work">
+		INSERT INTO work(
+		work_no
+		,emp_id
+		,work_dt
+		,work_bgng_dt
+		,work_state
+		)VALUES(
+		seq_work.nextval
+		,#{empId}
+		,sysdate
+		,sysdate
+		,#{workState}
+		)
+	</insert>
+	
+	
+	<update id="editEmpWork" parameterType="work">
+		UPDATE work SET
+		 work_no = seq_work.nextval
+		,work_end_dt = sysdate
+		,work_state = #{workState}
+		WHERE emp_id = #{empId}
+	</update>
+	
+	
+	<select id="getWorkGroup" parameterType="int" resultType="workGroup">
+		SELECT *
+		FROM work_group
+		WHERE group_no = #{groupNo}
+	</select>
+	
+	<select id="getWork" parameterType="string" resultType="work">
+		SELECT *
+		FROM work 
+		WHERE emp_id = #{empId}
+		AND to_char( work_dt, 'yyyymmdd' ) = to_char( sysdate, 'yyyymmdd')
+	</select>
+</mapper>

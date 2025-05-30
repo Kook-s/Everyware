@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.work.mapper.WorkMapper">
+<!-- 
+	키워드는 대문자 그 외(컬럼명,테이블명)는 소문자 
+	콤마는 앞에, 
+	주석은 필수, 
+	한컬럼은 무조건 한 줄에 하나만 Alias는 대문자로
+	테이블이 하나여도 alias 붙여서 작성
+	매퍼주소의 아이디값 까지 주석으로 붙이기
+-->
+
+	<resultMap type="work" id="workMap">
+		<id property="workNo" column="work_no"/>
+		<result property="workNo" column="work_no"/>
+		<result property="empId" column="emp_id"/>
+		<result property="workDt" column="work_dt"/>
+		<result property="workBgngDt" column="work_bgng_dt"/>
+		<result property="workEndDt" column="work_end_dt"/>
+		<result property="workState" column="work_state"/>
+	</resultMap>
+
+	<!-- 날짜 검색 -->
+	<sql id="workSearchDate">
+		<if test="searchStartDate == null and searchEndDate == null">
+			<![CDATA[
+				AND work_bgng_dt >= (TO_CHAR(TRUNC(SYSDATE, 'MM')))
+				AND work_bgng_dt < (TO_CHAR(LAST_DAY(sysdate),'yyyy-MM-dd'))
+			]]>
+		</if>
+		<if test="searchStartDate != null and searchEndDate != null">
+			<![CDATA[
+ 			    AND work_bgng_dt >= (TO_DATE(#{searchStartDate},'yyyy-MM-dd' )) 
+ 			    AND work_bgng_dt < (TO_DATE(#{searchEndDate},'yyyy-MM-dd' )+1)
+			]]>
+		</if>
+	</sql>
+	
+	<!-- 날짜 검색 -->
+	<sql id="workSearchDate2">
+		<if test="searchStartDate == null and searchStartDate == '' 
+					and searchEndDate == null and searchEndDate == ''">
+			<![CDATA[
+				AND work_bgng_dt >= (TO_CHAR(TRUNC(SYSDATE, 'MM')))
+				AND work_bgng_dt < (TO_CHAR(LAST_DAY(sysdate),'yyyy-MM-dd'))
+			]]>
+		</if>
+		
+<!-- 		<if test="searchStartDate != null and searchEndDate != null"> -->
+		<if test="searchStartDate != null and searchStartDate != ''  
+				and searchEndDate != null and searchEndDate != ''">
+			<![CDATA[
+ 			    AND work_bgng_dt >= (TO_DATE(#{searchStartDate},'yyyy-MM-dd' )) 
+ 			    AND work_bgng_dt < (TO_DATE(#{searchEndDate},'yyyy-MM-dd' )+1)
+			]]>
+		</if>
+		
+	</sql>
+	
+	<!-- 근태 상태 검색 -->
+	<sql id="workSearchState">
+		<if test="searchState != null and searchState != '' and searchState != '전체'" >
+ 			AND (work_state LIKE '%'||#{searchState}||'%')
+		</if>
+	</sql>
+	
+
+	<!-- 사원의 근태현황 전체건수 -->
+	<select id="selectWorkCount" parameterType="pagingVO" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 사원의 일일근태기록 페이징 -->
+	<select id="selectWorkList" parameterType="pagingVO" resultType="work">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkList -->
+		SELECT
+			b.*
+		FROM(
+			SELECT 
+				a.*, row_number() OVER (ORDER BY a.work_no DESC) rnum
+			FROM(
+				SELECT
+					emp_id 
+					,work_no
+					,work_dt
+					,work_bgng_dt
+					,work_end_dt
+					,work_state
+				FROM work
+				WHERE 1=1 
+				AND emp_id = #{empId}
+				<include refid="workSearchDate" />
+				<include refid="workSearchState" />
+				ORDER BY work_no DESC
+			) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} 
+			AND b.rnum <= #{endRow}
+		]]>
+	</select>
+	
+	<!-- 오늘 근태 기록 조회 -->
+	<select id="selectWorkToday" resultType="work">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkToday -->
+		SELECT
+			emp_id
+			, work_no
+			, work_dt
+			, work_bgng_dt
+			, work_end_dt
+			, work_state
+		FROM work
+		WHERE emp_id = #{empId}
+		AND TO_CHAR(work_bgng_dt, 'yyyymmdd') = TO_CHAR(SYSDATE, 'yyyymmdd')
+	</select>
+	
+	<!-- 오늘 근태 기록 수 조회 -->
+	<select id="selectWorkTodayCount" parameterType="work" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkTodayCount -->
+		SELECT count(TO_CHAR(work_dt, 'YYYYMMDD'))
+		FROM work
+		WHERE emp_id = #{empId}
+		AND TO_CHAR(work_bgng_dt, 'yyyymmdd') = TO_CHAR(SYSDATE, 'yyyymmdd')
+	</select>
+	
+	<!-- 출근 -->
+	<insert id="insertWorkBgngDt" parameterType="work" useGeneratedKeys="true">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.insertWorkBgngDt -->
+		<selectKey keyProperty="workNo" resultType="int" order="BEFORE">
+			SELECT seq_work.nextval from dual
+		</selectKey>
+		INSERT INTO work(
+			work_no
+			, emp_id
+			, work_dt
+			, work_bgng_dt
+			, work_state
+		) VALUES (
+			#{workNo}, #{empId}, sysdate, sysdate, '출근'
+		)
+	</insert>
+	
+	<!-- 퇴근 -->
+	<update id="updateWorkEndDt" parameterType="work">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.updateWorkEndDt -->
+		UPDATE work
+		SET 
+		    work_end_dt = sysdate
+		WHERE emp_id = #{empId}
+		AND TO_CHAR(work_bgng_dt, 'yyyymmdd') = TO_CHAR(SYSDATE, 'yyyymmdd')
+	</update>
+	
+	<!-- 근태현황 -->
+	<!-- 사원의 근태 정상 건수 -->
+	<select id="selectWorkNormalCount" parameterType="pagingVO" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkNormalCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '정상'
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 	사원의 근태 연장 건수 -->
+	<select id="selectWorkExtensionCount" parameterType="pagingVO" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkExtensionCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '연장'
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 	사원의 근태 지각 건수 -->
+	<select id="selectWorkLatenessCount" parameterType="pagingVO" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkLatenessCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '지각'
+		<include refid="workSearchDate" />
+	</select>
+
+	<!-- 	사원의 근태 조퇴 건수 -->
+	<select id="selectWorkLeaveEarlyCount" parameterType="pagingVO" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkLeaveEarlyCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '조퇴'
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 	사원의 휴가 건수 -->
+	<select id="selectWorkVacationCount" parameterType="pagingVO" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.selectWorkVacationCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '휴가'
+		<include refid="workSearchDate" />
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<!-- 근태목록 -->
+	<select id="getWorkList" parameterType="work" resultType="work">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkList -->
+		SELECT
+			w.emp_id 
+			,w.work_no
+			,TO_CHAR(w.work_bgng_dt,'yyyy-MM-dd') AS workDt
+			,TO_CHAR(w.work_bgng_dt,'DY') AS workDw
+			,TO_CHAR(w.work_bgng_dt,'HH24:mm:ss') AS workBgngDt
+			,TO_CHAR(w.work_end_dt,'HH24:mm:ss') AS workEndDt
+			,w.work_state
+		FROM work w
+		WHERE 1=1 
+		AND w.emp_id = #{empId}
+		<include refid="workSearchDate2" />
+		<include refid="workSearchState" />
+		ORDER BY w.work_bgng_dt DESC
+	</select>	
+	
+	<select id="getWorkToday" resultType="work">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkToday -->
+		SELECT
+			emp_id
+			, work_no
+			, work_dt
+			, work_bgng_dt
+			, work_end_dt
+			, work_state
+		FROM work
+		WHERE emp_id = #{empId}
+		AND TO_CHAR(work_dt, 'yyyymmdd') = TO_CHAR(SYSDATE, 'yyyymmdd')
+	</select>
+	
+	<!-- 근태현황 -->
+	<!-- 사원의 근태현황 전체건수 -->
+	<select id="getWorkCount" parameterType="work" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 사원의 근태 정상 건수 -->
+	<select id="getWorkNormalCount" parameterType="work" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkNormalCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '정상'
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 사원의 근태 연장 건수 -->
+	<select id="getWorkExtensionCount" parameterType="work" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkExtensionCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '연장'
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 사원의 근태 지각 건수 -->
+	<select id="getWorkLatenessCount" parameterType="work" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkLatenessCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '지각'
+		<include refid="workSearchDate" />
+	</select>
+
+	<!-- 사원의 근태 조퇴 건수 -->
+	<select id="getWorkLeaveEarlyCount" parameterType="work" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkLeaveEarlyCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '조퇴'
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 사원의 휴가 건수 -->
+	<!-- vacation 건수로 -->
+	<select id="getWorkVacationCount" parameterType="work" resultType="int">
+	<!-- kr.or.everyware.everyware.work.mapper.WorkMapper.getWorkVacationCount -->
+		SELECT COUNT(work_no)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_state = '휴가'
+		<include refid="workSearchDate" />
+	</select>
+	
+	<!-- 메인 그래프 -->
+	<select id="getAllWork" parameterType="string" resultType="work">
+		SELECT 
+			work_no
+			,emp_id
+			,TO_CHAR(work_dt , 'yyyy-MM-dd') as work_dt
+			,TO_CHAR(work_bgng_dt, 'HH24') as work_bgng_dt
+			,TO_CHAR(work_end_dt, 'HH24') as work_end_dt
+			,work_state
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_dt BETWEEN sysdate-7 AND sysdate
+		order by work_dt asc
+	</select>
+	<!-- 메인 그래프 END-->
+	
+	<!-- 메인 출근퇴근 시간등 -->
+	<select id="getTodayWork" parameterType="work" resultType="int">
+		SELECT count(*)
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_dt LIKE sysdate
+	</select>
+	
+	<select id="getTodayWork2" parameterType="work" resultType="work">
+		SELECT *
+		FROM work
+		WHERE emp_id = #{empId}
+		AND work_dt LIKE sysdate
+	</select>
+	
+	<insert id="addTodayWork" parameterType="work">
+		insert into work(
+			 work_no
+			,emp_id
+			,work_dt
+			,work_bgng_dt
+			,work_state
+		)values(
+			 seq_work.nextval
+			,#{empId}
+			,sysdate
+			,sysdate
+			,#{workState}
+		)
+	</insert>
+	
+	<update id="editTodayWork" parameterType="work">
+		UPDATE work
+		SET
+			 work_no = seq_work.nextval
+			,work_dt =sysdate
+			,work_end_dt = sysdate
+			,work_state = #{workState}
+		WHERE emp_id = #{empId}
+		AND work_DT LIKE sysdate
+	</update>
+	
+	<select id="getWorkGroup" parameterType="int" resultType="workGroup">
+		SELECT *
+		FROM work_group
+		WHERE group_no = #{groupNo}
+	</select>
+	<!-- 메인 출근퇴근 시간등 END-->
+	
+	<select id="getOneWork" parameterType="int" resultType="work">
+		SELECT
+			w.emp_id
+			, w.work_no
+			,TO_CHAR(w.work_bgng_dt,'yyyy-MM-dd') AS workDt
+			,TO_CHAR(w.work_bgng_dt,'DY') AS workDw
+			,TO_CHAR(w.work_bgng_dt,'HH24:mm:ss') AS workBgngDt
+			,TO_CHAR(w.work_end_dt,'HH24:mm:ss') AS workEndDt
+			,w.work_state
+		FROM work w
+		WHERE 1=1
+		AND w.work_no = #{workNo}
+		
+	</select>
+	
+	
+</mapper>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.board.mapper.BoardMapper">
+
+<sql id="noticeSearch">
+      <if test="searchType != null and searchType == 'title'">
+         and (PST_TTL like '%'||#{searchWord}||'%')
+      </if>
+      <if test="searchType != null and searchType == 'writer'">
+         and (EMP_ID like '%'||#{searchWord}||'%')
+      </if>
+   </sql>
+
+	<select id="list" resultType="board">
+		SELECT
+		     pst_id
+		    ,pst_ttl
+		    ,pst_cn
+		    ,pstg_bgng_dt
+		    ,pst_cnt
+		    ,emp_id
+		    ,ctgry_no
+		    ,atch_file_no
+		FROM
+		    board
+		WHERE
+		    1 = 1
+		ORDER BY
+		    pst_id DESC
+	</select>
+	
+	
+
+	
+<insert id="insert" parameterType="board" useGeneratedKeys="true">
+	<selectKey keyProperty="pstId" resultType="int"  order="BEFORE">
+			select seq_board.nextval from dual
+	</selectKey>
+  INSERT INTO board (
+    pst_id,
+    pst_ttl,
+    pst_cn,
+    pstg_bgng_dt,
+    pst_cnt,
+    emp_id,
+    ctgry_no,
+    atch_file_no
+  ) VALUES (
+    #{pstId},
+    #{pstTtl},
+    #{pstCn},
+    sysdate,
+    #{pstCnt},
+    #{empId},
+    #{ctgryNo},
+    #{atchFileNo}
+  )
+</insert>
+	
+	<select id="detail" parameterType="int" resultType="board">
+		select
+			pst_id
+		    ,pst_ttl
+		    ,pst_cn
+		    ,pstg_bgng_dt
+		    ,pst_cnt
+		    ,emp_id
+		    ,ctgry_no
+		    ,atch_file_no
+	   	FROM board a
+	    WHERE pst_id = #{pstId}
+	</select>
+
+	<delete id="delete" parameterType="int">
+		
+		DELETE 
+		FROM board 
+		WHERE pst_id = #{pst_id}
+		
+	</delete>
+
+	<select id="selectBoardCount" resultType="int">
+	
+	 SELECT 
+			count(pst_id)
+		 FROM board 
+		 WHERE ctgry_no = #{ctgryNo}
+		 <include refid="noticeSearch" /> 
+	</select>
+	
+	<select id="selectBoardList" parameterType="pagingVO" resultType="board">
+	   select
+         b.*
+      from(
+         select 
+            a.*, row_number() over (order by a.pst_id  asc) rnum
+         from(
+            select
+               pst_id, 
+               pst_ttl,
+               pst_cn,
+               emp_id,
+               pstg_bgng_dt, 
+			   ctgry_no,
+			   pst_cnt
+            from board
+            where 1=1
+            and ctgry_no=#{ctgryNo}
+            <include refid="noticeSearch" />
+             order by pst_id asc
+         ) a
+      ) b
+      <![CDATA[
+         where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+      ]]>
+   </select>
+		
+	
+		
+			
+	<update id="boardhit" parameterType="int">
+	Update 
+			board 
+	SET
+		pst_cnt = pst_cnt+1
+	WHERE pst_id = #{pstId}
+	
+	</update>
+	
+	
+	
+	<update id="updateBoard" parameterType="board">
+    UPDATE board
+    SET
+        pst_ttl = #{pstTtl},
+        pst_cn = #{pstCn},
+        pstg_bgng_dt = sysdate
+    WHERE pst_id = #{pstId}
+</update>
+	
+	<select id="selectBoard" parameterType="int" resultType="board" >
+	SELECT
+		   pst_id, 
+               pst_ttl,
+               pst_cn,
+               emp_id,
+               pstg_bgng_dt, 
+			   ctgry_no
+		FROM 	BOARD
+		WHERE	pst_id = #{pstId}
+		</select>
+	<insert id="insertAttach" parameterType="attachFile">
+		<selectKey keyProperty="atchFileNo" resultType="int"  order="BEFORE">
+			select seq_atch_file_no.nextval from dual
+		</selectKey>
+		insert into attach_file values(
+			#{atchFileNo},#{atchFileSeq},#{bizType},#{filePath},#{fileNm},#{fileSz},#{custId},sysdate,#{fileSavedNm},null
+		)	
+	</insert>	
+	
+	<select id="getAttachFile" parameterType="attachFile" resultType="attachFile">
+		select * from attach_file
+		where atch_file_no=#{atchFileNo} 
+			and atch_file_seq=1
+	</select>
+	
+	
+	<select id="getEmpList" resultType="employee">
+		select *
+		from employee
+	</select>
+</mapper>

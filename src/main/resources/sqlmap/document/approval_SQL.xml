@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.document.mapper.ApprovalMapper">
+
+	<insert id="insertProxy" parameterType="proxy" useGeneratedKeys="true">
+		<selectKey order="BEFORE" keyProperty="proxyId" resultType="int">
+			select seq_proxy.NEXTVAL FROM dual
+		</selectKey>
+		INSERT INTO proxy(
+			 proxy_id
+			,emp_id
+			,agt_id
+			,bgng_dt
+			,end_dt
+			,reason
+			,stng_ymd
+		) VALUES (
+			 #{proxyId}
+			,#{empId}
+			,#{agtId}
+			,#{bgngDt}
+			,#{endDt}
+			,#{reason}
+			,SYSDATE
+		)
+	</insert>
+	
+	<select id="selectProxyList" parameterType="string" resultType="proxy">
+		SELECT 
+			 p.proxy_id
+			,p.emp_id
+			,p.agt_id
+			,to_char(p.bgng_dt, 'YYYY-MM-DD') AS bgng_dt
+			,to_char(p.end_dt, 'YYYY-MM-DD') AS end_dt
+			,p.reason
+			,e.emp_name
+			,to_char(p.stng_ymd, 'YYYY-MM-DD') AS stng_ymd
+		FROM proxy p
+		INNER JOIN employee e ON p.agt_id = e.emp_id
+		WHERE p.emp_id = #{empId}
+		ORDER BY p.proxy_id DESC
+	</select>
+	
+	<update id="deleteProxy" parameterType="int">
+		UPDATE proxy
+		SET end_dt = SYSDATE
+		WHERE proxy_id = #{proxyId}
+	</update>
+	
+	<!-- 대결일 때 -->
+	
+	<!-- 대결자명으로 결재라인 insert -->
+	<insert id="insertDcrbApprovalLine" parameterType="apprLine">
+		INSERT INTO approval_line(
+			 aprv_line_sn
+			,aprv_sn
+			,emp_id
+			,aprv_order
+			,prgrs_stts_cd
+			,aprv_se_cd
+			,atrz_dt
+			,atrz_opnn
+		) VALUES (
+			 seq_approval_line.NEXTVAL
+			,#{aprvSn}
+			,#{empId}
+			,#{aprvOrder}
+			,#{prgrsSttsCd}
+			,2
+			,SYSDATE
+			,#{atrzOpnn}
+		)
+	</insert>
+	
+	<!-- 기존 결재자 대결위임처리 -->
+	<update id="updateDelegateWithProxy" parameterType="apprLine">
+		UPDATE approval_line
+		SET
+			prgrs_stts_cd = 6
+		WHERE aprv_line_sn = #{aprvLineSn}
+	</update>
+	
+	
+	
+	<!-- 대결이 아닐 때 -->
+	
+	<!-- 본인 결재 상태코드 변경 -->
+	<update id="updateApprovalLineStatus" parameterType="apprLine">
+		UPDATE approval_line
+		SET
+			 prgrs_stts_cd = #{prgrsSttsCd}
+			,atrz_dt = SYSDATE
+			,atrz_opnn = #{atrzOpnn}
+		WHERE aprv_line_sn = #{aprvLineSn}
+	</update>
+	
+	
+	
+	<!-- 전결일 때 -->
+	
+	<!-- 이후 결재자 전부 전결위임처리 -->
+	<update id="updateDelegateWithApproval" parameterType="apprLine">
+		UPDATE approval_line
+		SET
+			prgrs_stts_cd = 7
+		WHERE 1=1
+		AND aprv_sn = #{aprvSn}
+		AND aprv_line_sn <![CDATA[ < #{aprvLineSn} ]]>
+	</update>
+	
+	
+	
+	<!-- 첫번째 결재자인지 확인 -->
+	<select id="selectForIsFirstCheck" parameterType="apprLine" resultType="int">
+		SELECT count(aprv_line_sn)
+		FROM approval_line
+		WHERE 1=1
+		AND aprv_sn = #{aprvSn}
+		AND prgrs_stts_cd IN (3,4,5,6,7)
+	</select>
+	
+	
+	<!-- 첫번째 결재자일 때 -->
+	
+	<!-- 문서 상태 진행으로 변경 -->
+	<update id="updateDocumentFirstConfirm" parameterType="apprLine">
+		UPDATE approval
+		SET
+			prgrs_stts_cd = 4
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+	
+	
+	
+	<!-- 최종 결재자인지 확인 -->
+	<select id="selectForIsFinalCheck" parameterType="apprLine" resultType="int">
+		SELECT aprv_order
+		FROM approval_line
+		WHERE 1=1
+		AND aprv_line_sn = #{aprvLineSn}
+	</select>
+	
+	
+	
+	<!-- 최종 결재자가 아닐 때 -->
+	
+	<!-- 다음 결재자 상태코드 변경 -->
+	<update id="updateNextApproverStatus" parameterType="apprLine">
+		UPDATE approval_line
+		SET 
+			prgrs_stts_cd = 2
+		WHERE aprv_line_sn = (
+								SELECT aprv_line_sn
+								FROM (
+									SELECT aprv_line_sn
+									FROM approval_line
+									WHERE aprv_sn = #{aprvSn}
+									ORDER BY aprv_order DESC)
+								<![CDATA[
+								WHERE ROWNUM <= 1
+								]]>
+							)
+	</update>
+	
+	
+	
+	<!-- 전결 또는 최종 결재자일 때 -->
+	
+	<!-- 문서 최종 승인처리 -->
+	<update id="updateDocumentFinalConfirm" parameterType="apprLine">
+		UPDATE approval
+		SET
+			 atrz_cmptn_dt = SYSDATE
+			,prgrs_stts_cd = 6
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+	
+	<!-- 반려일 때 -->
+	
+	<!-- 문서 최종 반려처리 -->
+	<update id="updateDocumentFinalReject" parameterType="apprLine">
+		UPDATE approval
+		SET
+			 atrz_cmptn_dt = SYSDATE
+			,prgrs_stts_cd = 7
+		WHERE aprv_sn = #{aprvSn}
+	</update>
+</mapper>

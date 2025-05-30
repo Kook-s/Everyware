@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.vacation.mapper.VacItemMapper">
+	
+	<!-- 목록 -->
+	<select id="getVacItem" resultType="vacItem">
+	<!-- kr.or.everyware.admin.vacation.mapper.VacItemMapper.getVacItem -->
+		SELECT ROWNUM
+			, vi.*
+			, vi.vi_no
+			, vi.vi_type
+			, vi.vi_day
+			, vi.vi_memo
+			, vi.cust_id
+		FROM vac_item vi
+		WHERE vi.cust_id = #{custId}
+		ORDER BY vi.vi_day
+	</select>
+	
+	<!-- 추가 -->
+	<insert id="addVacItem" parameterType="vacItem">
+	<!-- kr.or.everyware.admin.vacation.mapper.VacItemMapper.addVacItem -->
+		INSERT INTO vac_item(
+			vi_no
+			, vi_type
+			, vi_day
+			, vi_memo
+			, cust_id
+		) VALUES (
+			seq_vac_item.NEXTVAL
+			, #{viType}
+			, #{viDay}
+			, #{viMemo}
+			, #{custId}
+		)
+	</insert>
+	
+	<!-- 삭제 -->
+	<delete id="delVacItem">
+	<!-- kr.or.everyware.admin.vacation.mapper.VacItemMapper.delVacItem -->
+		DELETE FROM vac_item
+		WHERE vi_no = #{viNo}
+	</delete>
+	
+	<!-- 수정 -->
+	<update id="editVacItem" parameterType="vacItem">
+	<!-- kr.or.everyware.admin.vacation.mapper.VacItemMapper.editVacItem -->
+		UPDATE vac_item
+		SET 
+			vi_type = #{viType}
+			, vi_day = #{viDay}
+			, vi_memo = #{viMemo}
+		WHERE vi_no = #{viNo}
+	</update>
+	
+</mapper>

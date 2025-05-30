@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everysolution.mapper.EverySolutionMapper">
+
+<insert id="addEverySignup" parameterType="client">
+	INSERT INTO client
+	VALUES (
+	    #{custId},
+	    #{custPw},
+	    #{conm},
+	    #{bplcNm},
+	    #{brno},
+	    #{bplcZip},
+	    #{bplcAddr},
+	    #{bplcDaddr},
+	    #{bplcTelno},
+	    #{picNm},
+	    #{picTelno},
+	    '1',
+	    'custauth'
+	)
+</insert>
+
+<select id="getClient" parameterType="string" resultType="client">
+select * from client where cust_id = #{custId}
+</select>
+
+<insert id="addOrderProduct" parameterType="orderProduct">
+	INSERT INTO order_product(
+		 ordr_id
+		,ordr_dt
+		,cust_id
+	 	,pdt_id
+		,ordr_bgng_dt
+		,ordr_end_dt
+		,ordr_amt
+		,ordr_person
+	)VALUES(
+		 seq_order_product.nextval
+		,to_char(sysdate, 'YYYY-MM-DD')
+		,#{custId}
+		,#{pdtId}
+		,to_char(sysdate, 'YYYY-MM-DD')
+		,to_char(sysdate + interval '1' year, 'YYYY-MM-DD')
+		,#{ordrAmt}
+		,#{ordrPerson}
+	)
+</insert>
+
+<select id="getProduct" parameterType="string" resultType="product">
+	SELECT
+		 pdt_id
+		,pdt_nm
+		,dft_price
+		,dft_person
+		,add_price
+		,add_file_sz
+		,add_cld_sz
+		,add_dft_person
+	FROM product
+	WHERE pdt_nm = #{pdtNm}
+</select>
+
+<select id="getOrderProduct" parameterType="string" resultType="orderProduct">
+	SELECT
+		 ordr_id
+		,ordr_dt
+		,cust_id
+		,pdt_id
+		,ordr_bgng_dt
+		,ordr_end_dt
+		,ordr_amt
+		,ordr_person
+	FROM order_product
+	WHERE cust_id = #{custId}
+</select>
+
+
+<select id="getLastOrderProduct" parameterType="String" resultType="orderProduct">
+	select * 
+	from(
+	    select a.*, row_number() over (order by ordr_id desc)  rnum
+	    from(
+	        SELECT
+	             ordr_id
+	            ,ordr_dt
+	            ,cust_id
+	            ,pdt_id
+	            ,ordr_bgng_dt
+	            ,ordr_end_dt
+	            ,ordr_amt
+	            ,ordr_person
+	        FROM order_product
+	        WHERE cust_id = #{custId} and CURRENT_DATE BETWEEN ORDR_BGNG_DT AND ORDR_END_DT
+	    )a
+	)
+	where rnum=1
+</select>
+<select id="getProductById" parameterType="int" resultType="product">
+	SELECT
+		 pdt_id
+		,pdt_nm
+		,dft_price
+		,dft_person
+		,add_price
+		,add_file_sz
+		,add_cld_sz
+		,add_dft_person
+	FROM product
+	WHERE pdt_id = #{pdtId}
+</select>
+<select id="getEmployeeCount" parameterType="String" resultType="int">
+	select count(*) from employee
+	where cust_id=#{custId}
+</select>
+<select id="getCustFileSum" parameterType="String" resultType="Long">
+	SELECT NVL(SUM(file_sz) , 0)
+	FROM attach_file 
+	WHERE cust_id = #{custId} 
+	AND EXTRACT(MONTH FROM file_crt_dt) = EXTRACT(MONTH FROM SYSDATE)
+</select>
+
+<update id="updateClient" parameterType="client">
+	update client
+	<set>
+		<if test="conm!=null and conm!=''">conm=#{conm},</if>
+		<if test="bplcNm!=null and bplcNm!=''">bplc_nm=#{bplcNm},</if>
+		<if test="brno!=null and brno!=''">brno=#{brno},</if>
+		<if test="bplcAddr!=null and bplcAddr!=''">bplc_addr=#{bplcAddr},</if>
+		<if test="bplcZip!=null and bplcZip!=''">bplc_zip=#{bplcZip},</if>
+		<if test="bplcDaddr!=null and bplcDaddr!=''">bplc_daddr=#{bplcDaddr},</if>
+		<if test="bplcTelno!=null and bplcTelno!=''">bplc_telno=#{bplcTelno},</if>
+		<if test="picNm!=null and picNm!=''">pic_nm=#{picNm},</if>
+		<if test="picTelno!=null and picTelno!=''">pic_telno=#{picTelno},</if>
+		<if test="custPw!=null and custPw!=''">cust_pw=#{custPw},</if>
+	</set>
+	where cust_Id=#{custId}
+</update>
+
+<select id="getOrderProductList" parameterType="String" resultType="orderProduct">
+       SELECT
+            ordr_id
+           ,ordr_dt
+           ,cust_id
+           ,pdt_id
+           ,ordr_bgng_dt
+           ,ordr_end_dt
+           ,ordr_amt
+           ,ordr_person
+       FROM order_product
+       WHERE cust_id = #{custId}
+</select>
+
+<select id="getNormalWorkList" parameterType="String" resultType="workStatistic">
+	SELECT all_dates.work_date, COUNT(a.work_dt) as normalCount
+	FROM (
+	  SELECT TRUNC(sysdate) - LEVEL + 1 as work_date
+	  FROM dual
+	<![CDATA[  CONNECT BY LEVEL <= (TRUNC(sysdate) - TRUNC(sysdate-7))]]>
+	) all_dates
+	LEFT JOIN (
+	  SELECT work_no, emp_id, work_dt, work_bgng_dt, work_end_dt, work_state
+	  FROM work
+	  WHERE work_state = '정상'
+	  and emp_id in(SELECT emp_id FROM employee WHERE cust_id = #{custId})
+	) a ON (all_dates.work_date = TRUNC(a.work_dt))
+	GROUP BY all_dates.work_date
+	ORDER BY all_dates.work_date
+</select>
+
+<select id="getAbnormalWorkList" parameterType="String" resultType="workStatistic">
+	SELECT all_dates.work_date, COUNT(a.work_dt) as abnormalCount
+	FROM (
+	  SELECT TRUNC(sysdate) - LEVEL + 1 as work_date
+	  FROM dual
+	<![CDATA[  CONNECT BY LEVEL <= (TRUNC(sysdate) - TRUNC(sysdate-7))]]>
+	) all_dates
+	LEFT JOIN (
+	  SELECT work_no, emp_id, work_dt, work_bgng_dt, work_end_dt, work_state
+	  FROM work
+	  WHERE work_state != '정상'
+	  and emp_id in(SELECT emp_id FROM employee WHERE cust_id = #{custId})
+	) a ON (all_dates.work_date = TRUNC(a.work_dt))
+	GROUP BY all_dates.work_date
+	ORDER BY all_dates.work_date
+</select>
+
+<select id="getNoticeFive" parameterType="String" resultType="board">
+	select b.* 
+	from(
+		select a.*, row_number() over (order by pst_id desc) rnum
+		from(  
+			select * from board
+			where ctgry_no=1
+			and emp_id in (select emp_id from employee where cust_id=#{custId})
+			order by pst_id desc
+			)a
+		)b
+		<![CDATA[where rnum<=5]]>
+</select>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+

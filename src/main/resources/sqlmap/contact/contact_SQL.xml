@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.contact.mapper.ContactMapper">
+	<sql id="contactSearch">
+		<if test="pagingVO.searchType != null and pagingVO.searchType == 'name'">
+			and (emp_name like '%${pagingVO.searchWord}%')
+		</if>
+		<if test="pagingVO.searchType != null and pagingVO.searchType == 'dept'">
+			and (dept_nm like '%${pagingVO.searchWord}%')
+		</if>
+	</sql>
+
+	<!-- 조직도 맵 -->
+	<resultMap type="dept" id="deptMap">
+		<id property="deptId" column="dept_id"/>
+		<result property="deptNm" column="dept_nm"/>
+		<result property="custId" column="cust_id"/>
+		<collection property="employees" resultMap="empMap"/>
+	</resultMap>
+	
+	<!-- 사원 맵 -->
+	<resultMap type="employee" id="empMap">
+		<result property="empId" column="emp_id"/>
+		<result property="jbgdId" column="jbgd_id"/>
+		<result property="empName" column="emp_name"/>
+		<result property="empTel" column="emp_tel"/>
+		<result property="empMail" column="emp_mail"/>
+		<result property="empProfile" column="emp_profile"/>
+		<result property="empTel" column="emp_tel"/>
+		<result property="empMail" column="emp_mail"/>
+		<result property="jbgdNm" column="jbgd_nm"/>
+		<result property="deptNm" column="dept_nm"/>
+	</resultMap>
+	
+	<!-- 폴더 맵 시작 -->
+	<resultMap type="folder" id="folderMap">
+		<id property="folSn" column="fol_sn"/>
+		<!-- <result property="empId" column="emp_id"/> -->
+		<result property="upFolSn" column="up_fol_sn"/>
+		<result property="folNm" column="fol_nm"/>
+		<result property="addrBookCd" column="addr_book_cd"/>
+		<!-- <collection property="folders" resultMap="folderMap"/> -->
+		<!-- <collection property="contacts"  resultMap="empMap"></collection> -->
+		<collection column="fol_sn = fol_sn" property="folders"  javaType="java.util.List" 
+	                            ofType="folder" select="selectFolders"></collection>
+	</resultMap>
+	
+	<select id="selectFolders" resultMap="folderMap">
+		SELECT
+			fol_sn
+			<!-- , emp_id -->
+			, up_fol_sn
+			, fol_nm
+			, addr_book_cd
+		FROM address_book_folder
+		WHERE up_fol_sn = #{fol_sn}
+	</select>
+	<!-- 폴더 맵 끝 -->
+	
+	<!-- 주소록 맵 시작 -->
+	<resultMap type="folder" id="folderForContactMap">
+		<id property="folSn" column="fol_sn"/>
+		<result property="upFolSn" column="up_fol_sn"/>
+		<result property="folNm" column="fol_nm"/>
+		<result property="addrBookCd" column="addr_book_cd"/>
+		<!-- <collection property="emp_id = emp_id"  resultMap="empMap"></collection> -->
+		<collection column="fol_sn = fol_sn" property="contacts"  javaType="java.util.List" 
+	                            ofType="employee" select="selectEmpForContact"></collection>
+		<collection column="fol_sn = fol_sn" property="folders"  javaType="java.util.List" 
+	                            ofType="folder" select="selectFoldersForContact"></collection>
+	</resultMap>
+	
+	<select id="selectFoldersForContact" resultMap="folderForContactMap">
+		SELECT
+			f.fol_sn
+			, f.up_fol_sn
+			, f.fol_nm
+			, f.addr_book_cd
+		FROM
+			address_book_folder f
+		WHERE up_fol_sn = #{fol_sn}
+	</select>
+	
+	<select id="selectEmpForContact" resultType="employee">
+		select
+			c.added_id as emp_id
+			, e.emp_name<!-- ||' ('||p.jbgd_nm||')' as emp_name -->
+			, e.emp_profile
+			, e.emp_tel
+			, e.emp_mail
+			, c.contact_sn
+			, c.alias
+			, d.dept_nm
+			, p.jbgd_nm
+		from
+			contact_incmpny c
+			INNER JOIN employee e ON c.added_id = e.emp_id
+			INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+			INNER JOIN department d ON e.dept_id = d.dept_id
+		WHERE c.fol_sn = #{fol_sn}
+	</select>
+	<!-- 주소록 맵 끝 -->
+
+	<!-- 조직도 select -->
+	<select id="selectEmpByDeptList" parameterType="string" resultMap="deptMap">
+		SELECT
+			d.dept_id
+			, d.dept_nm
+			, e.emp_id
+			, e.emp_name
+			, e.emp_profile
+			, e.emp_tel
+			, e.emp_mail
+			, p.jbgd_nm
+		FROM
+			department d
+			INNER JOIN employee e ON d.dept_id = e.dept_id
+			INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+		WHERE d.cust_id = #{custId}
+		AND e.enabled = 1
+		ORDER BY 
+			d.dept_id
+			, e.jbgd_id
+			, e.emp_name
+	</select>
+	
+	<!-- 주소록 select -->
+	<select id="selectContactsInByFolder" parameterType="string" resultMap="folderForContactMap">
+		SELECT
+			f.fol_sn
+			, f.up_fol_sn
+			, f.fol_nm
+			, f.addr_book_cd
+		FROM
+			address_book_folder f
+			INNER JOIN contact_incmpny c ON f.fol_sn = c.fol_sn 
+		WHERE
+			c.emp_id = #{empId}
+			AND f.up_fol_sn is null
+		ORDER BY c.bookmark_yn DESC
+	</select>
+	
+	<!-- 부서 select -->
+	<select id="selectDeptList" parameterType="string" resultType="dept">
+		SELECT
+			dept_id
+			,dept_nm
+			,cust_id
+		FROM department
+		WHERE cust_id = #{custId}
+	</select>
+	
+
+	<!-- 폴더 insert --> 
+	<insert id="insertFolder" parameterType="folder">
+		INSERT INTO address_book_folder(
+			fol_sn, emp_id, fol_sn2, fol_nm
+		) VALUES (
+			seq_address_book_folder.nextval, #{empId}, #{folSn2}, #{folNm}
+		)
+	</insert>
+
+	<!-- 폴더 select -->
+	<select id="selectFolderList" parameterType="string" resultMap="folderMap">
+		SELECT
+			fol_sn
+			, emp_id
+			, up_fol_sn
+			, fol_nm
+			, addr_book_cd
+		FROM address_book_folder
+		WHERE emp_id = #{empId}
+		AND up_fol_sn is null
+	</select>
+
+	<!-- 폴더 update -->
+	<update id="updateFolder" parameterType="folder">
+		UPDATE address_book_folder
+		SET
+			fol_sn2 = #{folSn2}
+			, fol_nm = #{folNm}
+		WHERE fol_sn = #{folSn}
+	</update>
+
+	<!-- 폴더 delete -->
+	<delete id="deleteFolder" parameterType="int">
+		DELETE from address_book_folder
+		WHERE fol_sn = #{folSn}
+	</delete>
+	
+	<!-- 폴더 delete 전처리(in) -->
+	<delete id="deleteContactInByFolder" parameterType="int">
+		delete contact_incmpny
+		where fol_sn = #{folSn}
+	</delete>
+	
+	<!-- 폴더 delete 전처리(out) -->
+	<delete id="deleteContactOutByFolder" parameterType="int">
+		delete contact_outcmpny
+		where fol_sn = #{folSn}
+	</delete>
+	
+	<!-- 사외주소록 count -->
+	<select id="selectContactsOutCount" parameterType="map" resultType="int">
+		SELECT
+			count(contact_sn)
+		FROM contact_outcmpny
+		WHERE 1=1
+		AND emp_id = #{empId}
+		<include refid="contactSearch"/>
+	</select>
+
+	<!-- 사외주소록 select -->
+	<select id="selectContactsOut" parameterType="string" resultType="addrBook">
+		SELECT
+			contact_sn
+			, emp_id
+			, fol_sn
+			, name
+			, alias
+			, telno1
+			, telno2
+			, eml_addr
+			, ogdp_inst_nm
+			, bookmark_yn
+		FROM contact_outcmpny
+		WHERE 1=1
+		AND emp_id = #{empId}
+		ORDER BY
+			bookmark_yn DESC,
+			contact_sn DESC
+	</select>
+	
+	<!-- !!!!!!!!한번에 여러개 입력하도록!!! -->
+	<!-- 사외주소록 insert -->
+	<update id="insertContactsOut" parameterType="java.util.List">
+		INSERT ALL
+		<foreach collection="list" item="item" separator=" ">
+		INTO contact_outcmpny(
+			contact_sn
+			, emp_id
+			, fol_sn
+			, name
+			, telno1
+			, telno2
+			, eml_addr
+			, ogdp_inst_nm
+		) VALUES (
+			seq_contact_out.NEXTVAL
+			,#{item.empId}
+			, #{item.folSn}
+			, #{item.name}
+			, #{item.telno1}
+			, #{item.telno2}
+			, #{item.emlAddr}
+			, #{item.ogdpInstNm}
+		)
+        </foreach>
+        SELECT * FROM DUAL
+	</update>
+	
+	<!-- !!!!!!!!!한번에 여러개 수정하도록!!!!!!!!! -->
+	<!-- 사외주소록 update -->
+	<update id="updateContactsOut" parameterType="java.util.List">
+		<!-- <selectKey keyProperty="updatedRowCount" resultType="java.lang.Integer" order="AFTER">
+	        SELECT SQL%ROWCOUNT AS updatedRowCount FROM DUAL
+	    </selectKey> -->
+		<foreach collection="list" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+	        UPDATE contact_outcmpny
+	        SET
+	        	ogdp_inst_nm = #{item.ogdpInstNm},
+	        	name = #{item.name},
+	        	telno1 = #{item.telno1},
+	        	telno2 = #{item.telno2},
+	        	eml_Addr = #{item.emlAddr}
+	        WHERE
+				contact_sn = #{item.contactSn}
+   		</foreach>
+	</update>
+	
+	<!-- 사외주소록 delete -->
+	<delete id="deleteContactsOut" parameterType="java.util.List">
+		DELETE contact_outcmpny
+		WHERE contact_sn in(
+		<foreach collection="list" item="contactSn" separator=",">
+        	#{contactSn}
+        </foreach>
+		)
+	</delete>
+	
+	<!-- 사내주소록 count -->
+	<select id="selectContactsInCount" parameterType="map" resultType="int">
+		SELECT
+			count(c.contact_sn)
+		FROM
+			contact_incmpny c
+		INNER JOIN employee e ON c.added_id = e.emp_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+		WHERE 1=1
+		AND c.emp_id = #{empId}
+		<include refid="contactSearch"/>
+	</select>
+	
+	<!-- 사내주소록 select -->
+	<select id="selectContactsIn" parameterType="string" resultType="contactIn">
+		SELECT
+			c.contact_sn
+			, c.added_id as emp_id
+			, c.fol_sn
+			, c.bookmark_yn
+			, c.alias
+			, e.emp_name
+			, e.emp_tel
+			, e.emp_mail
+			, e.emp_profile
+			, d.dept_nm
+			, p.jbgd_nm
+		FROM
+			contact_incmpny c
+		INNER JOIN employee e ON c.added_id = e.emp_id
+		INNER JOIN department d ON e.dept_id = d.dept_id
+		INNER JOIN position p ON e.jbgd_id = p.jbgd_id
+		WHERE 1=1
+		AND c.emp_id = #{empId}
+		ORDER BY
+			c.bookmark_yn DESC,
+			c.contact_sn DESC
+	</select>
+	
+	<!-- 여러개@!!한번에!!! -->
+	<!-- 사내주소록 insert -->
+	<insert id="insertContactsIn">
+		INSERT INTO contact_incmpny(
+			contact_sn
+			, emp_id
+			, added_id
+			, fol_sn
+			, bookmark_yn
+			, alias
+		) VALUES (
+			seq_contact_in.NEXTVAL
+			, #{empId}
+			, #{addedId}
+			, #{folSn}
+			, #{bookmarkYn}
+			, #{alias}
+		)
+	</insert>
+	
+	<!-- 여러개@!!한번에!!! -->
+	<!-- 사내주소록 update -->
+	<update id="updateContactsIn" parameterType="java.util.List">
+	</update>
+	
+	<!-- 사내주소록 delete -->
+	<delete id="deleteContactsIn" parameterType="java.util.List">
+		DELETE contact_incmpny
+		WHERE contact_sn IN(
+		<foreach collection="list" item="contactSn" separator=",">
+        	#{contactSn}
+        </foreach>
+		)
+	</delete>
+	
+</mapper>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.workYear.mapper.WorkYearMapper">
+	
+	<!-- 목록조회 -->
+	<select id="getWorkYear" resultType="workYear">
+	<!-- kr.or.everyware.admin.workYear.mapper.WorkYearMapper.getWorkYear -->
+		SELECT ROWNUM
+			, wy.*
+			, wy.wy_no
+			, wy.cust_id
+			, wy.wy_year
+			, wy.wy_hldy
+			, wy.wy_memo
+		FROM work_year wy
+		WHERE cust_id = #{custId}
+		ORDER BY wy.wy_year
+	</select>
+	
+	<!-- 추가 -->
+	<insert id="addWorkYear" parameterType="workYear">
+	<!-- kr.or.everyware.admin.workYear.mapper.WorkYearMapper.addWorkYear -->
+		INSERT INTO work_year(
+			wy_no
+			, cust_id
+			, wy_year
+			, wy_hldy
+			, wy_memo
+		) VALUES (
+			seq_work_year.NEXTVAL
+			, #{custId}
+			, #{wyYear}
+			, #{wyHldy}
+			, #{wyMemo}
+		)
+	</insert>
+	
+	<!-- 삭제 -->
+	<delete id="delWorkYear">
+	<!-- kr.or.everyware.admin.workYear.mapper.WorkYearMapper.editTodo -->
+		DELETE FROM work_year
+		WHERE wy_no = #{wyNo} 
+	</delete>
+	
+	<!-- 수정 -->
+	<update id="editWorkYear" parameterType="workYear">
+		UPDATE work_year
+		SET 
+			wy_year = #{wyYear}
+			, wy_hldy = #{wyHldy}
+			, wy_memo = #{wyMemo}
+		WHERE wy_no = #{wyNo}
+	</update>
+</mapper>

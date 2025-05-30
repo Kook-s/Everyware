@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.mail.mapper.AdminMailMapper">
+
+	<select id="getDeptList" parameterType="String" resultType="dept">
+		select * from department
+		where cust_id=#{custId}
+	</select>
+	<select id="getPosList" parameterType="String" resultType="posi">
+		select * from position
+		where cust_id=#{custId}
+	</select>
+	
+	
+	
+	
+	<sql id="nameCond">
+		<if test="name != null and name !=''">
+			and a.emp_name like '%'||#{name}||'%'
+		</if>
+	</sql>
+	
+	<sql id="titleCond">
+		<if test="title != null and title !=''">
+			and eml_ttl like '%'||#{title}||'%'
+		</if>
+	</sql>
+	
+	<sql id="isLately">
+		<if test="isLately != null and isLately =='날짜 내림차순'">
+			order by eml_id desc
+		</if>
+		<if test="isLately != null and isLately =='날짜 오름차순'">
+			order by eml_id asc
+		</if>
+	</sql>
+	
+	<sql id="deptCond">
+		<if test="deptId >0">
+			and d.dept_id=#{deptId}
+		</if>
+	</sql>
+	<sql id="posCond">
+		<if test="jbgdId >0">
+			and e.jbgd_id=#{jbgdId}
+		</if>
+	</sql>
+	<sql id="dateCond">
+		<if test="sdate!=null and edate==null">
+			and eml_sndng_dt between #{sdate} and sysdate
+		</if>
+		<if test="sdate==null and edate!=null">
+			<![CDATA[ and eml_sndng_dt <=#{edate} ]]>
+		</if>
+		<if test="sdate!=null and edate!=null">
+			and eml_sndng_dt between #{sdate} and #{edate}
+		</if>
+	</sql>
+	
+	<select id="selectMailCount" parameterType="adminMailPaging" resultType="int">
+		select count(a.emp_id)
+		from(
+		    select * from employee
+		    where cust_id=#{custId}) a join email_send b on(a.emp_id=b.emp_id)
+		    left outer join department d on(a.dept_id=d.dept_id)
+		    left outer join position e on(a.jbgd_id=e.jbgd_id)
+		    join email c on(b.eml_id=c.eml_id)
+		where 1=1<include refid="deptCond"></include><include refid="posCond"></include><include refid="nameCond"></include><include refid="titleCond"></include><include refid="dateCond"></include>     
+	</select>
+	<select id="selectMailList" parameterType="adminMailPaging" resultType="mailList">
+		select * from(
+		    select f.*,row_number() over (<include refid="isLately"></include>) rnum 
+		    from(
+		        select a.emp_id as sender_id, a.emp_name as sender_name, a.emp_mail as sender_mail, a.emp_profile as sender_profile
+		        , d.dept_nm as sender_dept_nm, e.jbgd_nm as sender_jbgd_nm,c.*
+		        from(
+		            select * from employee
+		            where cust_id='a001') a join email_send b on(a.emp_id=b.emp_id)
+		            left outer join department d on(a.dept_id=d.dept_id)
+		            left outer join position e on(a.jbgd_id=e.jbgd_id)
+		            join email c on(b.eml_id=c.eml_id)
+		        where 1=1 <include refid="deptCond"></include><include refid="posCond"></include><include refid="nameCond"></include><include refid="titleCond"></include> <include refid="dateCond"></include>      
+		    )f
+		)
+		<![CDATA[
+			where rnum >= #{startRow} and rnum <=#{endRow}
+		]]>
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	<resultMap type="emailDetail" id="emailDetailMap">
+		<id property="emlId" column="eml_id"/>
+		<result property="emlId" column="eml_id"/>
+		<result property="emlSndngDt" column="eml_sndng_dt"/>
+		<result property="emlCn" column="eml_cn"/>
+		<result property="emlTtl" column="eml_ttl"/>
+		<result property="upEmlId" column="up_eml_id"/>
+		<result property="emlTmprStrgYn" column="eml_tmpr_strg_yn"/>
+		<result property="atchFileNo" column="atch_file_no"/>
+		<association property="sender" javaType="employee">
+			<result property="empId" column="sender_id"/>
+			<result property="empName" column="sender_name"/>
+			<result property="empMail" column="sender_mail"/>
+			<result property="empProfile" column="sender_profile"/>
+			<result property="jbgdNm" column="sender_jbgd_nm"/>
+			<result property="deptNm" column="sender_dept_nm"/>
+		</association>
+		
+		<collection property="receiver" resultMap="receiverMap"></collection>
+	</resultMap>
+	
+	<resultMap type="employee" id="receiverMap">
+		<id property="empId" column="receiver_id"/>
+		<result property="empId" column="receiver_id"/>
+		<result property="empName" column="receiver_name"/>
+		<result property="empMail" column="receiver_mail"/>
+		<result property="empProfile" column="receiver_profile"/>
+		<result property="jbgdNm" column="receiver_jbgd_nm"></result>
+		<result property="deptNm" column="receiver_dept_nm"></result>
+	</resultMap>
+	
+	
+	<select id="getMailInfo" parameterType="int" resultMap="emailDetailMap">
+		select a.eml_id, a.eml_sndng_dt, a.eml_cn, a.eml_ttl, a.up_eml_id, a.eml_tmpr_strg_yn, a.atch_file_no,d.emp_id as sender_id, d.emp_name as sender_name
+		    ,d.emp_mail as sender_mail, d.emp_profile as sender_profile, f.jbgd_nm as sender_jbgd_nm, h.dept_nm as sender_dept_nm,e.emp_id as receiver_id, e.emp_name as receiver_name,
+		    e.emp_mail as receiver_mail, e.emp_profile as receiver_profile, g.jbgd_nm as receiver_jbgd_nm, i.dept_nm as receiver_dept_nm
+		from email a 
+		    join email_send b on(a.eml_id=b.eml_Id)
+		    join employee d on(b.emp_id=d.emp_id)
+		    join position f on(d.jbgd_id = f.jbgd_id)
+		    join department h on(d.dept_id=h.dept_id)
+		    left outer join email_receive c on(a.eml_id=c.eml_id)
+		    left outer join employee e on(c.emp_id=e.emp_id)
+		    left outer join position g on(e.jbgd_id = g.jbgd_id)
+		    left outer join department i on(e.dept_id=i.dept_id)
+		where a.eml_Id=#{emlId}
+	</select>
+	<select id="getMailFileList" parameterType="int" resultType="attachFile">
+		 select atch_file_no, atch_file_seq, file_path, file_nm, file_sz,file_crt_dt,file_saved_nm,file_type
+		 from attach_file 
+		 where atch_file_no=#{atchFileNo}
+	</select>
+</mapper>

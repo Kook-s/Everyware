@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.login.mapper.LoginMapper">
+
+
+	<resultMap type="employee" id="emplogin">
+		<id property="empId" column="emp_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empPw" column="emp_pw"/>
+		<result property="empName" column="emp_name"/>
+		<result property="deptId" column="dept_id"/>
+		<result property="jbgdId" column="jbgd_id"/>
+		<result property="empBirth" column="emp_birth"/>
+		<result property="empTel" column="emp_tel"/>
+		<result property="empMail" column="emp_mail"/>
+		<result property="empPost" column="emp_post"/>
+		<result property="empAddr1" column="emp_addr1"/>
+		<result property="empAddr2" column="emp_addr2"/>
+		<result property="empDate" column="emp_date"/>
+		<result property="empIdno" column="emp_idno"/>
+		<result property="empVac" column="emp_vac"/>
+		<result property="empProfile" column="emp_profile"/>
+		<result property="groupNo" column="group_no"/>
+		<result property="custId" column="cust_id"/>
+		<result property="authrtId" column="authrt_id"/>
+		
+		<result property="deptNm" column="dept_nm"></result>
+		<result property="conm" column="conm"></result>
+		<result property="jbgdNm" column="jbgd_nm"></result>
+		
+
+			
+		<association property="authorityGroup" javaType="authorityGroup">
+			<result property="authrtId" column="authrt_id"/>
+			<result property="authrtNm" column="authrt_nm"/>
+			<result property="custId" column="cust_id"/>
+			
+			<collection property="authMenuList" resultMap="authMenuListResultMap"></collection>
+		</association>
+		
+		<collection property="authMenuList" resultMap="authMenuListResultMap"></collection>
+	</resultMap>
+    <resultMap type="authMenu" id="authMenuListResultMap">
+    	<id property="authrtId" column="authrt_id"/>
+		<id property="menuId" column="menu_id"/>
+		<result property="authrtId" column="authrt_id"/>
+		<result property="menuId" column="menu_id"/>
+		<association property="menu" javaType="menu">
+			<result property="menuId" column="menu_id"/>
+			<result property="upMenuId" column="upMenu_id"/>
+			<result property="menuSe" column="menu_se"/>
+			<result property="menuNm" column="menu_nm"/>
+			<result property="useYn" column="use_yn"/>
+			<result property="menuOrd" column="menu_ord"/>
+			<result property="menuUrl" column="menu_url"/>
+			<result property="menuIcon" column="menu_icon"/>
+		</association>
+    </resultMap>
+   
+   
+   
+   
+   
+	   <resultMap type="client" id="clientMap">
+			<id property="custId" column="cust_id"/>
+			<result property="custId" column="cust_id"/>
+			<result property="custPw" column="cust_pw"/>
+			<result property="conm" column="conm"/>
+			<result property="bplcNm" column="bplc_nm"/>
+			<result property="brno" column="brno"/>
+			<result property="bplcZip" column="bplc_zip"/>
+			<result property="bplcAddr" column="bplc_addr"/>
+			<result property="bplcDaddr" column="bplc_daddr"/>
+			<result property="bplcTelno" column="bplc_telno"/>
+			<result property="picNm" column="pic_nm"/>
+			<result property="picTelno" column="pic_telno"/>
+			<result property="auth" column="auth"/>
+			
+			<collection property="authMenuList" resultMap="clientAuthMenu"></collection>
+		</resultMap>
+		
+		<resultMap type="authMenu" id="clientAuthMenu">
+			<id property="menuId" column="menu_id"/>
+			<result property="menuId" column="menu_id"/>
+			<association property="menu" javaType="menu">
+				<result property="menuId" column="menu_id"/>
+				<result property="upMenuId" column="upMenu_id"/>
+				<result property="menuSe" column="menu_se"/>
+				<result property="menuNm" column="menu_nm"/>
+				<result property="useYn" column="use_yn"/>
+				<result property="menuOrd" column="menu_ord"/>
+				<result property="menuUrl" column="menu_url"/>
+				<result property="menuIcon" column="menu_icon"/>
+			</association>
+	    </resultMap>
+		
+    
+	<select id="readByEmployeeId" parameterType="string" resultMap="emplogin">
+		select 
+		a.EMP_ID,a.EMP_PW,a.DEPT_ID,a.JBGD_ID,a.EMP_NAME,a.EMP_BIRTH,a.EMP_tel,a.EMP_MAIL,a.EMP_POST,a.EMP_ADDR1,a.EMP_ADDR2,a.EMP_DATE,
+		EMP_IDNO,EMP_VAC,EMP_PROFILE,a.GROUP_NO,a.CUST_ID,d.jbgd_id,e.dept_id,e.dept_nm,conm,d.jbgd_nm,c.authrt_id,c.authrt_nm,
+        g.*,h.*
+		from employee a join position d on(a.jbgd_id=d.jbgd_id  and a.emp_id=#{empId})
+        join department e on(a.dept_id=e.dept_id)
+        join (select cust_id,conm from client) f on(a.cust_id=f.cust_id)
+        join authority_group c on (a.authrt_id = c.authrt_id)
+        join auth_menu g on(c.authrt_id = g.authrt_id)
+        join menu h on(g.menu_id=h.menu_id)
+	</select>
+	<select id="readByClientId" parameterType="string" resultMap="clientMap">
+		 select * from 
+		   client a, menu b
+		   where cust_id=#{custId} and menu_se=3	
+	</select>
+	
+	<select id="getEmp" parameterType="Employee" resultType="Employee">
+		   SELECT
+    A.emp_id,
+    A.emp_pw,
+    A.DEPT_ID,
+    A.jbgd_id,
+    A.emp_name,
+    A.emp_birth,
+    A.emp_tel,
+    A.emp_mail,
+    A.emp_post,
+    A.emp_addr1,
+    A.emp_addr2,
+    A.emp_date,
+    A.emp_idno,
+    A.emp_vac,
+    A.emp_profile,
+    A.group_no,
+    A.cust_id,
+    A.enabled,
+    A.authrt_id,
+    B.DEPT_NM,
+    C.JBGD_NM
+FROM
+    EMPLOYEE A
+    JOIN DEPARTMENT B ON A.DEPT_ID = B.DEPT_ID
+    JOIN POSITION C ON A.JBGD_ID = C.JBGD_ID
+    WHERE A.EMP_ID = #{empId}
+	</select>
+	
+	<update id="updateMyPage" parameterType="Employee">
+	UPDATE 
+			EMPLOYEE
+	SET	
+			emp_mail = #{empMail},
+			emp_tel = #{empTel},
+			emp_addr1 = #{empAddr1},
+			emp_addr2 = #{empAddr2},
+			emp_pw = #{empPw}
+		 WHERE 
+		 	emp_id = #{empId}		
+	</update>
+	
+	
+	<insert id="inserLoginLog" parameterType="loginLog">
+		<selectKey keyProperty="logId" resultType="int" order="BEFORE">
+			select seq_login_log.nextval from dual
+		</selectKey>
+		insert into login_log values(
+			#{logId},sysdate,#{lgnIpAddr},#{lgnDeptNm},#{lgnBro},#{empId},#{lgnArea}
+		)
+	</insert>
+	
+	
+	<update id="updateEmployee" parameterType="employee">
+		update employee
+		<set>
+			<if test="passwordFlag==true">emp_pw = #{empPw},</if>
+			<if test="empProfile!=null and empProfile!=''">emp_profile = #{empProfile},</if>
+			<if test="empBirth!=null">emp_birth = #{empBirth},</if>
+			<if test="empMail!=null">emp_mail = #{empMail},</if>
+			<if test="empPost!=null">emp_post = #{empPost},</if>
+			<if test="empAddr1!=null">emp_addr1 = #{empAddr1},</if>
+			<if test="empAddr2!=null">emp_addr2 = #{empAddr2},</if>
+			<if test="empTel!=null">emp_tel = #{empTel},</if>
+		</set>
+		where emp_id=#{empId}
+	</update>
+	
+	<select id="getEmployee" parameterType="String" resultType="employee">
+		select * from employee
+		where emp_id = #{empId}
+	</select>
+	
+	<select id="getIpList" parameterType="String" resultType="loginLog">
+		select * from login_log
+		where emp_id = #{empId}
+		<![CDATA[and lgn_dt >= ADD_MONTHS(TRUNC(SYSDATE), -2)
+  		AND lgn_dt <= SYSDATE]]>
+  		order by log_id desc
+	</select>
+</mapper>

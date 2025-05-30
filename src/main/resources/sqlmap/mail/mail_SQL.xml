@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.mail.mapper.MailMapper">
+
+	<sql id="mailSearch">
+		<if test="searchWord != null and searchWord !=''">
+			and eml_Ttl like '%'||#{searchWord}||'%'
+		</if>
+	</sql>
+	
+	<sql id="isLately">
+		<if test="isLately != null and isLately =='오래된순'">
+			order by eml_id asc
+		</if>
+		<if test="isLately != null and isLately =='최신순'">
+			order by eml_id desc
+		</if>
+	</sql>
+	<sql id="bookmark">
+		<if test="bookMark">
+			and eml_bookmark = 'Y'
+		</if>
+	</sql>
+	<sql id="attachment">
+		<if test="attachment">
+			and atch_file_no > 0
+		</if>
+	</sql>
+	<sql id="CountByMenuName">
+		<if test="menuName != null and menuName =='전체메일'">
+			select count(*) from email
+	        where (
+	                eml_id in (select eml_id from email_send where emp_id=#{empId} and trash_yn='N' and remove_yn='N' <include refid="bookmark"></include>)
+	                or eml_id in (select eml_id from email_receive where emp_id=#{empId} and trash_yn='N' and remove_yn='N'<include refid="bookmark"></include>)
+	            ) and eml_tmpr_strg_yn='N' <include refid="attachment"></include>
+		</if>
+		<if test="menuName != null and menuName =='휴지통'">
+			select count(*) from email
+        where (
+                eml_id in (select eml_id from email_send where emp_id=#{empId} and trash_yn='Y' and remove_yn='N' <include refid="bookmark"></include>)
+                or eml_id in (select eml_id from email_receive where emp_id=#{empId} and trash_yn='Y' and remove_yn='N' <include refid="bookmark"></include>)
+                ) <include refid="attachment"></include>
+		</if>
+		<if test="menuName != null and menuName =='받은메일함'">
+			select count(*)
+		from email_receive a join (select * from email where 1=1 <include refid="attachment"></include>) b on(a.eml_id=b.eml_id) where emp_Id=#{empId} and trash_yn='N' and remove_yn='N' and eml_tmpr_strg_yn='N' <include refid="bookmark"></include>
+		</if>
+		<if test="menuName != null and menuName =='임시보관함'">
+			select count(*)
+		from email_send a join (select * from email where 1=1 <include refid="attachment"></include>) b on(a.eml_id=b.eml_id) where emp_Id=#{empId} and eml_tmpr_strg_yn='Y' and trash_yn='N' and remove_yn='N' <include refid="bookmark"></include>
+		</if>
+		<if test="menuName != null and menuName =='보낸메일함'">
+			select count(*)
+		from email_send a join (select * from email where 1=1 <include refid="attachment"></include>) b on(a.eml_id=b.eml_id) where emp_Id=#{empId} and trash_yn='N' and remove_yn='N' and eml_tmpr_strg_yn='N' <include refid="bookmark"></include>
+		</if>
+	</sql>
+
+
+	<sql id="selectMailQuery">
+		<if test="menuName != null and menuName =='전체메일'">
+			   select * 
+				    from(
+				        select g.*,DENSE_RANK() over (<include refid="isLately"></include>) rnum from (
+				            select c.eml_bookmark,c.eml_id,d.eml_sndng_dt,d.eml_ttl,d.up_eml_id,d.atch_file_no,f.emp_id as sender_id,f.emp_name as sender_name
+				                                 ,f.emp_mail as sender_mail,f.emp_profile as sender_profile, h.jbgd_nm as sender_jbgd_nm,i.dept_nm as sender_dept_nm, c.eml_read_dt
+				                from (select *
+				                      from email_receive a
+				                      where a.emp_id=#{empId} and trash_yn='N' and remove_yn='N' <include refid="bookmark"></include>) c
+				                      join (select * from email where eml_tmpr_strg_yn='N' <include refid="mailSearch"></include> <include refid="attachment"></include>) d on (c.eml_id=d.eml_id)
+				                      join email_send e on(d.eml_id = e.eml_id)
+				                      join employee f on (e.emp_id=f.emp_id)
+		                              join position h on(f.jbgd_id=h.jbgd_id)
+		                              join department i on(i.dept_id=f.dept_id)
+				            union
+				            select a.eml_bookmark,a.eml_id,b.eml_sndng_dt,b.eml_ttl,b.up_eml_id,b.atch_file_no,c.emp_id as "sender_id",c.emp_name as "sender_name"
+				                                 ,c.emp_mail as "sender_mail",c.emp_profile as "sender_profile", h.jbgd_nm as sender_jbgd_nm,i.dept_nm as sender_dept_nm, null as eml_read_dt
+				                            from (select emp_id, eml_id, eml_bookmark
+				                                  from email_send 
+				                                  where emp_id=#{empId} and trash_yn='N' and remove_yn='N' <include refid="bookmark"></include>) a 
+				                                  join email b on(a.eml_id=b.eml_id and eml_tmpr_strg_yn='N' <include refid="mailSearch"></include> <include refid="attachment"></include>)
+				                                  join employee c on(a.emp_id = c.emp_id) 
+		                                          join position h on(c.jbgd_id=h.jbgd_id)
+		                                          join department i on(i.dept_id=c.dept_id)
+				            ) g
+				        )
+    
+		        <![CDATA[
+					where rnum >= #{startRow} and rnum <=#{endRow}
+				]]>
+		</if>
+		<if test="menuName != null and menuName =='휴지통'">
+			    select * 
+			    from(
+			        select g.*,DENSE_RANK() over (<include refid="isLately"></include>) rnum from (
+			            select c.eml_bookmark,c.eml_id,d.eml_sndng_dt,d.eml_ttl,d.up_eml_id,d.atch_file_no,f.emp_id as sender_id,f.emp_name as sender_name
+			                                 ,f.emp_mail as sender_mail,f.emp_profile as sender_profile, h.jbgd_nm as sender_jbgd_nm,i.dept_nm as sender_dept_nm, c.eml_read_dt
+			                from (select *
+			                      from email_receive a
+			                      where a.emp_id=#{empId} and trash_yn='Y' and remove_yn='N' <include refid="bookmark"></include>) c
+			                      join (select * from email where eml_tmpr_strg_yn='N' <include refid="mailSearch"></include> <include refid="attachment"></include>) d on (c.eml_id=d.eml_id)
+			                      join email_send e on(d.eml_id = e.eml_id)
+			                      join employee f on (e.emp_id=f.emp_id)
+	                              join position h on(f.jbgd_id=h.jbgd_id)
+	                              join department i on(i.dept_id=f.dept_id)
+			            union
+			            select a.eml_bookmark,a.eml_id,b.eml_sndng_dt,b.eml_ttl,b.up_eml_id,b.atch_file_no,c.emp_id as "sender_id",c.emp_name as "sender_name"
+			                                 ,c.emp_mail as "sender_mail",c.emp_profile as "sender_profile", h.jbgd_nm as sender_jbgd_nm,i.dept_nm as sender_dept_nm, null as eml_read_dt
+			                            from (select emp_id, eml_id, eml_bookmark
+			                                  from email_send 
+			                                  where emp_id=#{empId} and trash_yn='Y' and remove_yn='N' <include refid="bookmark"></include>) a 
+			                                  join email b on(a.eml_id=b.eml_id and eml_tmpr_strg_yn='N' <include refid="mailSearch"></include> <include refid="attachment"></include>)
+			                                  join employee c on(a.emp_id = c.emp_id) 
+	                                          join position h on(c.jbgd_id=h.jbgd_id)
+	                                          join department i on(i.dept_id=c.dept_id)
+			            ) g
+			        )
+		        <![CDATA[
+					where rnum >= #{startRow} and rnum <=#{endRow}
+				]]>
+		</if>
+		<if test="menuName != null and menuName =='받은메일함'">
+			 select * 
+		        from(
+		            select g.*,DENSE_RANK() over (<include refid="isLately"></include>) rnum 
+		            from (
+		                select c.eml_read_dt, c.eml_bookmark,c.eml_id,d.eml_sndng_dt,d.eml_ttl,d.up_eml_id,d.atch_file_no,f.emp_id as "sender_id",f.emp_name as "sender_name"
+		                                 ,f.emp_mail as "sender_mail",f.emp_profile as "sender_profile", h.jbgd_nm as "sender_jbgd_nm",i.dept_nm as sender_dept_nm
+		                from (select *
+		                      from email_receive a
+		                      where a.emp_id=#{empId} and trash_yn='N' and remove_yn='N' <include refid="bookmark"></include>) c
+		                      join (select * from email where eml_tmpr_strg_yn='N' <include refid="mailSearch"></include> <include refid="attachment"></include>) d on (c.eml_id=d.eml_id)
+		                      join email_send e on(d.eml_id = e.eml_id)
+		                      join employee f on (e.emp_id=f.emp_id)
+		                      join position h on(f.jbgd_id=h.jbgd_id)
+		                      join department i on(i.dept_id=f.dept_id)
+		             ) g  
+		        )
+	        <![CDATA[
+					where rnum >= #{startRow} and rnum <=#{endRow}
+				]]>
+		</if>
+		<if test="menuName != null and menuName =='임시보관함'">
+			select * 
+	        from(
+	            select g.*,DENSE_RANK() over (<include refid="isLately"></include>) rnum 
+	            from (
+	                     select a.eml_bookmark,a.eml_id,b.eml_sndng_dt,b.eml_ttl,b.up_eml_id,b.atch_file_no,c.emp_id as sender_id,c.emp_name as sender_name
+	                         ,c.emp_mail as sender_mail,c.emp_profile as sender_profile,w.jbgd_nm as sender_jbgd_nm, e.emp_id as receiver_id,e.emp_name as receiver_name
+	                         ,e.emp_mail as receiver_mail,e.emp_profile as receiver_profile, f.jbgd_nm as "receiver_jbgd_nm"
+	                    from (select employee.emp_id, eml_id, eml_bookmark,jbgd_id
+	                          from email_send join employee on(email_send.emp_id=employee.emp_id)
+	                          where employee.emp_id=#{empId} and trash_yn='N' and remove_yn='N' <include refid="bookmark"></include>) a 
+	                          join position w on(a.jbgd_id=w.jbgd_id)
+	                          join email b on(a.eml_id=b.eml_id and eml_tmpr_strg_yn='Y' <include refid="mailSearch"></include> <include refid="attachment"></include>)
+	                          join (select emp_id, emp_name, emp_mail, emp_profile from employee) c on(a.emp_id = c.emp_id)
+	                          left outer join email_receive d on(b.eml_id=d.eml_id)
+	                          left outer join employee e on(d.emp_id = e.emp_id)
+	                          left outer join position f on(e.jbgd_id=f.jbgd_id)
+	                    )g
+	                )
+	            <![CDATA[
+					where rnum >= #{startRow} and rnum <=#{endRow}
+				]]>
+		</if>
+		<if test="menuName != null and menuName =='보낸메일함'">
+			   select * 
+            from(
+                select g.*,DENSE_RANK() over (<include refid="isLately"></include>) rnum 
+                from (    
+                        select a.eml_bookmark,a.eml_id,b.eml_sndng_dt,b.eml_ttl,b.up_eml_id,b.atch_file_no,c.emp_id as sender_id,c.emp_name as sender_name
+                                 ,c.emp_mail as sender_mail,c.emp_profile as sender_profile,q.jbgd_nm as "sender_jbgd_nm", e.emp_id as receiver_id,e.emp_name as receiver_name
+                                 ,e.emp_mail as "receiver_mail",e.emp_profile as "receiver_profile", f.jbgd_nm as "receiver_jbgd_nm"
+                            from (select emp_id, eml_id, eml_bookmark
+                                  from email_send 
+                                  where emp_id=#{empId} and trash_yn='N' and remove_yn='N' <include refid="bookmark"></include>) a 
+                                  join employee w on(a.emp_id = w.emp_id)
+                                  join position q on(w.jbgd_id=q.jbgd_id)
+                                  join email b on(a.eml_id=b.eml_id and eml_tmpr_strg_yn='N'  <include refid="mailSearch"></include> <include refid="attachment"></include>)
+                                  join (select emp_id, emp_name, emp_mail, emp_profile from employee) c on(a.emp_id = c.emp_id)
+                                  left outer join email_receive d on(b.eml_id=d.eml_id)
+                                  join employee e on(d.emp_id = e.emp_id)
+                                  join position f on(e.jbgd_id=f.jbgd_id)
+                    )g
+                ) 
+                <![CDATA[
+					where rnum >= #{startRow} and rnum <=#{endRow}
+				]]>
+		</if>
+	</sql>
+
+
+
+
+
+
+
+
+
+<resultMap type="mailList" id="mailListMap">
+	<id property="emlId" column="eml_id"/>
+	<result property="emlBookMark" column="eml_bookmark"/>
+	<result property="emlId" column="eml_id"/>
+	<result property="emlSndngDt" column="eml_sndng_dt"/>
+	<result property="emlTtl" column="eml_ttl"/>
+	<result property="upEmlId" column="up_eml_id"/>
+	<result property="atchFileNo" column="atch_file_no"/>
+	<result property="senderId" column="sender_id"/>
+	<result property="senderName" column="sender_name"/>
+	<result property="senderMail" column="sender_mail"/>
+	<result property="senderProfile" column="sender_profile"/>
+	<result property="senderJbgdNm" column="sender_jbgd_nm"/>
+	<result property="senderDeptNm" column="sender_dept_nm"/>
+	<result property="emlReadDt" column="eml_read_dt"/>
+	<collection property="receiver" resultMap="receiverMap"></collection>
+</resultMap>
+<resultMap type="employee" id="receiverMap">
+	<id property="empId" column="receiver_id"/>
+	<result property="empId" column="receiver_id"/>
+	<result property="empName" column="receiver_name"/>
+	<result property="empMail" column="receiver_mail"/>
+	<result property="empProfile" column="receiver_profile"/>
+	<result property="jbgdNm" column="receiver_jbgd_nm"></result>
+	<result property="deptNm" column="receiver_dept_nm"></result>
+</resultMap>
+
+
+	<select id="selectMailList" parameterType="mailPaging" resultMap="mailListMap">
+		<include refid="selectMailQuery"></include>
+	</select> 
+
+
+
+<select id="selectMailCount" parameterType="mailPaging" resultType="int">
+		<include refid="CountByMenuName"></include>
+		<include refid="mailSearch"></include>
+	</select>
+
+	<select id="selectUnreadMailCount" parameterType="String" resultType="int">
+		select count(*) from email_receive
+		where emp_id=#{empId} and trash_yn='N' and remove_yn='N'
+		and eml_read_dt is null
+	</select>
+
+
+	<select id="getProfileList" parameterType="employee" resultType="employee">
+		select a.emp_id, a.emp_name, a.emp_mail, a.emp_profile, b.jbgd_nm, c.dept_nm
+		from
+		    (select * 
+		    from employee 
+		    where cust_id= #{custId} and emp_id != #{empId}) a 
+		    left outer join position b on(a.JBGD_ID=B.JBGD_ID)
+		    left outer join department c on(a.dept_id = c.dept_id)
+	</select>
+	<insert id="insertEmail" parameterType="email">
+		<selectKey keyProperty="emlId" resultType="int"  order="BEFORE">
+			select seq_email.nextval from dual
+		</selectKey>
+		insert into email values(
+			#{emlId},#{emlSndngDt},#{emlCn},#{emlTtl},#{upEmlId},#{emlTmprStrgYn},#{atchFileNo}
+		)
+	</insert>
+	<insert id="insertAttachAndGetKey" parameterType="attachFile">
+		<selectKey keyProperty="atchFileNo" resultType="int"  order="BEFORE">
+			select seq_atch_file_no.nextval from dual
+		</selectKey>
+		insert into attach_file values(
+			#{atchFileNo},#{atchFileSeq},#{bizType},#{filePath},#{fileNm},#{fileSz},#{custId},sysdate,#{fileSavedNm},#{fileType}
+		)	
+	</insert>
+    <insert id="insertAttach" parameterType="attachFile">
+    	insert into attach_file values(
+			#{atchFileNo},#{atchFileSeq},#{bizType},#{filePath},#{fileNm},#{fileSz},#{custId},sysdate,#{fileSavedNm},#{fileType}
+		)	
+    </insert>                                                      
+    <insert id="insertMailSender" parameterType="map">
+    	insert into email_send values(
+    		#{empId},#{emlId},'N','N','N'
+    	)
+    </insert>                                                      
+    <insert id="insertMailReceiver" parameterType="map">
+    	insert into email_receive values(
+    		#{emlId},#{empId},'N',null,'N','N','N'
+    	)
+    </insert>                                                       
+	
+	<sql id="senderOrReceiver">
+		<if test="type!=null and type=='send'">
+			update email_send
+		</if>
+		<if test="type!=null and type=='receive'">
+			update email_receive
+		</if>
+	</sql>
+	<update id="modifyMailBookMark" parameterType="map">
+		<include refid="senderOrReceiver"></include>
+		set eml_bookmark=#{emlBookMark}
+		where eml_id=#{emlId} and emp_id=#{empId}
+	</update>
+
+            
+	<select id="getSendTotal" parameterType="String" resultType="int">
+		 select count(*) from email_send a join email b on(a.eml_id=b.eml_id)
+         where a.emp_id=#{empId} and trash_yn='N' and remove_yn='N' and EML_TMPR_STRG_YN='N'
+	</select>
+	<select id="receiveTotal" parameterType="String" resultType="int">
+		  select count(*) from email_receive
+         where emp_id=#{empId} and trash_yn='N' and remove_yn='N'
+	</select>
+	<select id="tempTotal" parameterType="String" resultType="int">
+		  select count(*) from email_send a join email b on(a.eml_id=b.eml_id)
+          where emp_id=#{empId} and trash_yn='N' and remove_yn='N' and b.eml_tmpr_strg_yn='Y'
+	</select>
+	<select id="sendTrash" parameterType="String" resultType="int">
+		  select count(*) from email_send
+          where emp_id=#{empId} and trash_yn='Y' and remove_yn='N'
+	</select>
+	<select id="receiveTrash" parameterType="String" resultType="int">
+		  select count(*) from email_receive
+          where emp_id=#{empId} and trash_yn='Y' and remove_yn='N'
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	<resultMap type="emailDetail" id="emailDetailMap">
+		<id property="emlId" column="eml_id"/>
+		<result property="emlId" column="eml_id"/>
+		<result property="emlSndngDt" column="eml_sndng_dt"/>
+		<result property="emlCn" column="eml_cn"/>
+		<result property="emlTtl" column="eml_ttl"/>
+		<result property="upEmlId" column="up_eml_id"/>
+		<result property="emlTmprStrgYn" column="eml_tmpr_strg_yn"/>
+		<result property="atchFileNo" column="atch_file_no"/>
+		<association property="sender" javaType="employee">
+			<result property="empId" column="sender_id"/>
+			<result property="empName" column="sender_name"/>
+			<result property="empMail" column="sender_mail"/>
+			<result property="empProfile" column="sender_profile"/>
+			<result property="jbgdNm" column="sender_jbgd_nm"/>
+			<result property="deptNm" column="sender_dept_nm"/>
+		</association>
+		
+		<collection property="receiver" resultMap="receiverMap"></collection>
+	</resultMap>
+	
+	
+	
+	
+	
+	
+	
+	<select id="getMailInfo" parameterType="int" resultMap="emailDetailMap">
+		select a.eml_id, a.eml_sndng_dt, a.eml_cn, a.eml_ttl, a.up_eml_id, a.eml_tmpr_strg_yn, a.atch_file_no,d.emp_id as sender_id, d.emp_name as sender_name
+		    ,d.emp_mail as sender_mail, d.emp_profile as sender_profile, f.jbgd_nm as sender_jbgd_nm, h.dept_nm as sender_dept_nm,e.emp_id as receiver_id, e.emp_name as receiver_name,
+		    e.emp_mail as receiver_mail, e.emp_profile as receiver_profile, g.jbgd_nm as receiver_jbgd_nm, i.dept_nm as receiver_dept_nm
+		from email a 
+		    join email_send b on(a.eml_id=b.eml_Id)
+		    join employee d on(b.emp_id=d.emp_id)
+		    join position f on(d.jbgd_id = f.jbgd_id)
+		    join department h on(d.dept_id=h.dept_id)
+		    left outer join email_receive c on(a.eml_id=c.eml_id)
+		    left outer join employee e on(c.emp_id=e.emp_id)
+		    left outer join position g on(e.jbgd_id = g.jbgd_id)
+		    left outer join department i on(e.dept_id=i.dept_id)
+		where a.eml_Id=#{emlId}
+	</select>
+	<select id="getMailFileList" parameterType="int" resultType="attachFile">
+		 select atch_file_no, atch_file_seq, file_path, file_nm, file_sz,file_crt_dt,file_saved_nm,file_type
+		 from attach_file 
+		 where atch_file_no=#{atchFileNo}
+	</select>
+	
+	<select id="getReplyMailList" parameterType="emailDetail" resultMap="mailListMap">
+		select a.EML_ID, a.EML_SNDNG_DT, a.EML_CN, a.EML_TTL, a.UP_EML_ID, a.EML_TMPR_STRG_YN, a.ATCH_FILE_NO,b.emp_id as sender_id,
+		    emp_name as sender_name,emp_mail as sender_mail, emp_profile as sender_profile, d.jbgd_nm as sender_jbgd_nm,e.eml_read_dt,b.eml_bookmark
+		from(        
+                    SELECT *
+		            FROM email
+		            START WITH eml_id = (
+                                        select eml_id 
+                                        from(
+                                            select w.*,row_number() over (order by eml_id ) rnum
+                                            from(
+                                                    SELECT *
+                                                    FROM email
+                                                    START WITH eml_id = #{emlId}
+                                                    CONNECT BY  eml_id =PRIOR up_eml_id
+                                                    ) w
+                                            )
+                                        where rnum=1
+                    )
+		            CONNECT BY  up_eml_id =PRIOR eml_id
+		    ) a join email_send b on (a.eml_id = b.eml_id)
+		        join employee c on(b.emp_id=c.emp_id)
+		        join position d on(c.jbgd_id=d.jbgd_id)
+		        join email_receive e on(a.eml_id=e.eml_id)
+		where e.emp_id=#{empId} or b.emp_id=#{empId}
+		order by a.eml_id
+	</select>
+	<select id="getAttachFile" parameterType="attachFile" resultType="attachFile">
+		select * from attach_file
+		where atch_file_no=#{atchFileNo} 
+			and atch_file_seq=#{atchFileSeq}
+	</select>
+	<update id="readMail" parameterType="map">
+		update email_receive
+		set EML_READ_DT=sysdate
+		where emp_id=#{empId} and eml_id=#{emlId}
+	</update>
+	<select id="getMail" parameterType="map" resultType="email">
+		select * from email
+		where eml_id=#{emlId}
+	</select>
+	<update id="mailToTrash" parameterType="map">
+		<include refid="senderOrReceiver"></include>
+		set trash_YN='Y'
+		where emp_id=#{empId} and eml_id=#{emlId} 
+	</update>
+	<update id="mailToRetrieve" parameterType="map">
+		<include refid="senderOrReceiver"></include>
+		set trash_YN='N'
+		where emp_id=#{empId} and eml_id=#{emlId} 
+	</update>
+	<update id="mailToErase" parameterType="map">
+		<include refid="senderOrReceiver"></include>
+		set remove_YN='Y'
+		where emp_id=#{empId} and eml_id=#{emlId} 
+	</update>
+</mapper>

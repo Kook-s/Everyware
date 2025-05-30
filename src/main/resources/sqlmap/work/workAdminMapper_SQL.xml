@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.admin.work.mapper.WorkAdminMapper">
+	
+	<!-- 날짜 검색 -->
+	<sql id="searchDate">
+<!-- 		<if test="searchStartDate == null or searchStartDate or '' and searchEndDate or null and searchEndDate == '' "> -->
+<!-- 			<![CDATA[ -->
+<!-- 				AND w.work_bgng_dt = TO_DATE(SYSDATE,'yyyy-MM-dd') -->
+<!-- 				AND w.work_bgng_dt = SYSDATE -->
+<!-- 			]]> -->
+<!-- 		</if> -->
+		
+		<if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != '' ">
+			<![CDATA[
+				AND w.work_bgng_dt >= (TO_DATE(#{searchStartDate},'yyyy-MM-dd'))
+				AND w.work_bgng_dt < (TO_DATE(#{searchEndDate},'yyyy-MM-dd')+1)
+			]]>
+		</if>
+		
+	</sql>
+	
+	<!-- 상태 검색 -->
+	<sql id="searchState">
+		<if test="searchState != null and searchState != '' and searchState != '전체'" >
+ 			AND (w.work_state LIKE '%'||#{searchState}||'%')
+		</if>
+	</sql>
+	
+	<!-- 전체목록 페이징 -->
+	<select id="getTotalRecord" parameterType="workAdmin" resultType="int">
+		SELECT
+			COUNT(b.work_no)
+		FROM(
+			SELECT 
+				a.*, row_number() OVER (ORDER BY a.work_no DESC) rnum
+			FROM(
+				SELECT
+					w.work_no As work_no
+					,w.emp_id As emp_id
+					,TO_CHAR(w.work_bgng_dt,'yyyy-MM-dd') AS workDt
+					,TO_CHAR(w.work_bgng_dt,'DY') AS workDw
+					,TO_CHAR(w.work_bgng_dt,'HH24:mm:ss') AS workBgngDt
+					,TO_CHAR(w.work_end_dt,'HH24:mm:ss') AS workEndDt
+					, w.work_state
+					, e.cust_id
+					, d.dept_nm
+					, p.jbgd_nm
+				FROM work w, employee e, department d, position p
+				WHERE 1=1
+				AND w.emp_id = e.emp_id
+				AND e.dept_id = d.dept_id
+				AND e.jbgd_id = p.jbgd_id
+				AND e.cust_id = #{custId}
+				<include refid="searchDate" />
+				<include refid="searchState" />
+				ORDER BY w.work_no DESC
+			) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} 
+			AND b.rnum <= #{endRow}
+		]]>	
+	</select>
+	
+	<!-- 검색해야함 -->
+	<!-- 목록페이징 -->
+	<select id="getAdminWorkList" parameterType="workAdmin" resultType="workAdmin">
+		SELECT
+			b.*
+		FROM(
+			SELECT 
+				a.*, row_number() OVER (ORDER BY a.work_no DESC) rnum
+			FROM(
+				SELECT
+					w.work_no As work_no
+					,w.emp_id As emp_id
+					,TO_CHAR(w.work_bgng_dt,'yyyy-MM-dd') AS workDt
+					,TO_CHAR(w.work_bgng_dt,'DY') AS workDw
+					,TO_CHAR(w.work_bgng_dt,'HH24:mm:ss') AS workBgngDt
+					,TO_CHAR(w.work_end_dt,'HH24:mm:ss') AS workEndDt
+					, w.work_state
+					, e.cust_id
+					, d.dept_nm
+					, p.jbgd_nm
+				FROM work w, employee e, department d, position p
+				WHERE 1=1
+				AND w.emp_id = e.emp_id
+				AND e.dept_id = d.dept_id
+				AND e.jbgd_id = p.jbgd_id
+				AND e.cust_id = #{custId}
+				<include refid="searchDate" />
+				<include refid="searchState" />
+				ORDER BY w.work_no DESC
+			) a
+		) b
+		<![CDATA[
+			WHERE b.rnum >= #{startRow} 
+			AND b.rnum <= #{endRow}
+		]]>	
+	</select>
+	
+	<!-- 근태현황 -->
+	<select id="getTotalWork" parameterType="workAdmin" resultType="int">
+		SELECT COUNT(w.work_no)
+		FROM work w, employee e
+		WHERE 1=1
+		AND w.emp_id = e.emp_id
+		AND e.cust_id = #{custId}
+		<include refid="searchDate" />
+	</select>
+	
+	<!-- 정상건 -->
+	<select id="getTotalNormal" parameterType="workAdmin" resultType="int">
+		SELECT COUNT(w.work_no)
+		FROM work w, employee e
+		WHERE 1=1
+		AND w.emp_id = e.emp_id
+		AND e.cust_id = #{custId}
+		AND w.work_state = '정상'
+		<include refid="searchDate" />
+	</select>
+	
+	<!-- 연장건 -->
+	<select id="getWorkExtensionCount" parameterType="workAdmin" resultType="int">
+		SELECT COUNT(w.work_no)
+		FROM work w, employee e
+		WHERE 1=1
+		AND w.emp_id = e.emp_id
+		AND e.cust_id = #{custId}
+		AND w.work_state = '연장'
+		<include refid="searchDate" />
+	</select>
+	
+	<!-- 지각건 -->
+	<select id="getWorkLatenessCount" parameterType="workAdmin" resultType="int">
+		SELECT COUNT(w.work_no)
+		FROM work w, employee e
+		WHERE 1=1
+		AND w.emp_id = e.emp_id
+		AND e.cust_id = #{custId}
+		AND w.work_state = '지각'
+		<include refid="searchDate" />
+	</select>
+	
+	<!-- 조퇴건 -->
+	<select id="getWorkLeaveEarlyCount" parameterType="workAdmin" resultType="int">
+		SELECT COUNT(w.work_no)
+		FROM work w, employee e
+		WHERE 1=1
+		AND w.emp_id = e.emp_id
+		AND e.cust_id = #{custId}
+		AND w.work_state = '조퇴'
+		<include refid="searchDate" />
+	</select>
+	
+	<!-- 휴가건 -->
+	<select id="getWorkVacationCount" parameterType="workAdmin" resultType="int">
+		SELECT COUNT(w.work_no)
+		FROM work w, employee e
+		WHERE 1=1
+		AND w.emp_id = e.emp_id
+		AND e.cust_id = #{custId}
+		AND w.work_state = '휴가'
+		<include refid="searchDate" />
+	</select>
+</mapper>

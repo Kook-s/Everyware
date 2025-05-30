@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.cloud.mapper.CloudMapper">
+
+	<select id="getOrCldSize" parameterType="string" resultType="cldOrderProduct">
+		SELECT  a.ordr_person , b.add_cld_sz
+		FROM order_product a , product b
+		WHERE  a.pdt_id = b.pdt_id
+		AND cust_id = 'a001'
+	</select>
+
+</mapper>

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="kr.or.everyware.everyware.chat.mapper.ChatMapper">
+<resultMap type="chatroom" id="chatroomListMap">
+		<id property="roomId" column="room_id"/>
+		<result property="roomId" column="room_id"/>
+		<result property="roomNm" column="room_nm"/>
+		<result property="roomCrtDt" column="room_crt_dt"/>
+		<result property="unreadCount" column="unreadcount"/>
+		<association property="lastMessage" resultMap="messageMap"></association>
+		<collection property="chatroomUsers" resultMap="chatroomUserMap"></collection>
+	</resultMap>
+	
+	<resultMap type="chatroom" id="chatroomMap">
+		<id property="roomId" column="room_id"/>
+		<result property="roomId" column="room_id"/>
+		<result property="roomNm" column="room_nm"/>
+		<result property="roomCrtDt" column="room_crt_dt"/>
+		<result property="unreadCount" column="unreadcount"/>
+		<association property="lastMessage" javaType="message">
+			<id property="msgId" column="msg_id"/>
+			<result property="msgId" column="msg_id"/>
+			<result property="msgCn" column="msg_cn"/>
+			<result property="msgCrtDt" column="msg_crt_dt"/>
+			<result property="msgType" column="msg_type"/>
+			<result property="roomId" column="room_id"/>
+			<result property="empId" column="emp_id"/>
+		</association>
+		<collection property="chatroomUsers" resultMap="chatroomUserMap"></collection>
+	</resultMap>
+	<resultMap type="chatroomUser" id="chatroomUserMap">
+		<id property="roomId" column="room_id"/>
+		<id property="empId" column="emp_id"/>
+  		<result property="roomId" column="room_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="lastReadMsgId" column="last_read_msg_id"/>
+		<association property="employee" resultMap="employeeMap"></association>
+	</resultMap>
+	<resultMap type="employee" id="employeeMap">
+		<id property="empId" column="emp_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empPw" column="emp_pw"/>
+		<result property="empName" column="emp_name"/>
+		<result property="deptId" column="dept_id"/>
+		<result property="jbgdId" column="jbgd_id"/>
+		<result property="empBirth" column="emp_birth"/>
+		<result property="empTel" column="emp_tel"/>
+		<result property="empMail" column="emp_mail"/>
+		<result property="empPost" column="emp_post"/>
+		<result property="empAddr1" column="emp_addr1"/>
+		<result property="empAddr2" column="emp_addr2"/>
+		<result property="empDate" column="emp_date"/>
+		<result property="empIdno" column="emp_idno"/>
+		<result property="empVac" column="emp_vac"/>
+		<result property="empProfile" column="emp_profile"/>
+		<result property="groupNo" column="group_no"/>
+		<result property="custId" column="cust_id"/>
+		<result property="authrtId" column="authrt_id"/>
+	</resultMap>
+	
+	<resultMap type="message" id="messageMap">
+		<id property="msgId" column="msg_id"/>
+		<result property="msgId" column="msg_id"/>
+		<result property="msgCn" column="msg_cn"/>
+		<result property="msgCrtDt" column="msg_crt_dt"/>
+		<result property="msgType" column="msg_type"/>
+		<result property="roomId" column="room_id"/>
+		<result property="empId" column="emp_id"/>
+		<association property="employee" resultMap="employeeMap"></association>
+	</resultMap>
+
+
+
+<resultMap type="message" id="messageContentMap">
+		<id property="msgId" column="msg_id"/>
+		<result property="msgId" column="msg_id"/>
+		<result property="msgCn" column="msg_cn"/>
+		<result property="msgCrtDt" column="msg_crt_dt"/>
+		<result property="msgType" column="msg_type"/>
+		<result property="roomId" column="room_id"/>
+		<result property="empId" column="emp_id"/>
+		<association property="employee" resultMap="empMap"></association>
+	</resultMap>
+
+
+
+<resultMap type="employee" id="empMap">
+		<id property="empId" column="emp_id"/>
+		<result property="empId" column="emp_id"/>
+		<result property="empPw" column="emp_pw"/>
+		<result property="empName" column="emp_name"/>
+		<result property="deptId" column="dept_id"/>
+		<result property="jbgdId" column="jbgd_id"/>
+		<result property="empBirth" column="emp_birth"/>
+		<result property="empTel" column="emp_tel"/>
+		<result property="empMail" column="emp_mail"/>
+		<result property="empPost" column="emp_post"/>
+		<result property="jbgdNm" column="jbgd_Nm"/>
+		<result property="deptNm" column="dept_Nm"/>
+		<result property="empDate" column="emp_date"/>
+		<result property="empIdno" column="emp_idno"/>
+		<result property="empVac" column="emp_vac"/>
+		<result property="empProfile" column="emp_profile"/>
+		<result property="groupNo" column="group_no"/>
+		<result property="deptNm" column="dept_nm"/>
+		<result property="custId" column="cust_id"/>
+		<result property="authrtId" column="authrt_id"/>
+	</resultMap>
+
+
+
+
+
+
+
+
+
+	<insert id="createChatroom" parameterType="chatroom" useGeneratedKeys="true">
+		<selectKey keyProperty="roomId" resultType="int" order="BEFORE">
+			select seq_chatroom.nextval from dual
+		</selectKey>
+		insert into chatroom
+		values(
+			#{roomId},#{roomNm},sysdate
+		)
+	</insert>
+	<insert id="createChatroomUser" parameterType="map">
+		insert into chatroomuser
+		values(
+			#{roomId},#{empId},0,'N'
+		)
+	</insert>
+	<select id="selectChatroomAndUser" parameterType="String" resultMap="chatroomListMap">
+		select a.room_id,room_nm,a.ROOM_CRT_DT,b.room_id,b.emp_id,last_read_msg_id,c.*,j.dept_nm,d.*,e.unreadCount
+		from(
+		        select * 
+		        from chatroom
+		        where room_id in(select room_id 
+		                         from chatroomuser 
+		                         where emp_id=#{empId})
+		    ) a left outer join (
+		                            select * 
+		                            from chatroomuser 
+		                            where emp_id!=#{empId} 
+		                        ) b on(a.room_id = b.room_id)
+            join employee c on(b.emp_id=c.emp_id)
+            left outer join department j on(c.dept_Id = j.dept_id)
+            left outer join (
+                                select msg_id, msg_cn, MSG_CRT_DT, MSG_TYPE, ROOM_ID, EMP_ID,
+                                    ROW_NUMBER() OVER (PARTITION BY room_id ORDER BY msg_id DESC) AS rn
+                                from message                             
+                            ) d on(a.room_id =d.room_id and d.rn = 1)
+            left outer join (select m.room_id as troom_id, count(*) as unreadCount
+                            from message m, (select * 
+                                            from chatroomuser 
+                                            where emp_id=#{empId}) cu
+                            where m.room_id=cu.room_id
+                                and m.msg_id>cu.LAST_READ_MSG_ID
+                            GROUP BY m.room_id
+                            ) e on(a.room_id = e.troom_id)
+		order by d.msg_Id desc
+	</select>
+	<select id="selectMessages" parameterType="int" resultMap="messageContentMap">
+		select a.msg_id, msg_cn, msg_crt_dt, msg_type,a.emp_id, room_id,
+			b.dept_id, b.emp_name,b.emp_profile,d.jbgd_nm,e.dept_nm ,file_path
+		from
+	    	message a inner join employee b on (a.emp_id =b.emp_id)
+            left outer join position d on(b.jbgd_id=d.jbgd_id)
+            left outer join department e on(b.dept_id=e.dept_id)
+	    	left outer join attach_file c on(a.ATCH_FILE_NO = c.atch_file_no)
+	    where room_Id=#{roomId}
+	    order by msg_id  
+	</select>
+	<select id="selectChatroomAndUserByRoomId" parameterType="int" resultMap="chatroomMap">
+		select * 
+		from (select * from chatroom where room_Id=#{roomId}) a left outer join chatroomuser b on (a.room_Id=b.room_Id)
+		inner join employee c on(b.emp_id = c.emp_id)
+	</select>
+
+	<insert id="insertMessage" parameterType="message" useGeneratedKeys="true">
+		<selectKey keyProperty="msgId" resultType="int" order="BEFORE">
+			select seq_message.nextval from dual
+		</selectKey>
+		insert into message values(
+			#{msgId}, #{msgCn}, sysdate, #{msgType},#{roomId}, #{empId}, #{atchFileNo}
+		)
+	</insert>
+	<update id="updateLastMessage" parameterType="map">
+		update chatroomuser
+		set last_read_msg_id = #{msgId}
+		where room_id = #{roomId} and emp_id=#{empId}
+	</update>
+	<select id="selectLastMessage" parameterType="int" resultType="message">
+		select * 
+		from(
+		    select * from message 
+		    where room_id=#{roomId} 
+		    order by msg_id desc
+		    )
+		where rownum=1
+	</select>
+	<select id="selectmessageById" parameterType="int" resultType="message">
+		select * from message
+		where msg_id = #{msgId}
+	</select>
+
+	<select id="selectEmployees" parameterType="employee" resultType="employee">
+		select a.*,b.dept_nm,c.jbgd_nm from 
+		employee a
+		left outer join department b on(a.dept_id=b.dept_id)
+		left outer join position c on(a.jbgd_id=c.jbgd_id) 
+		where a.emp_id != #{empId} and a.cust_id=#{custId}
+		order by emp_name
+	</select>
+	<select id="selectEmployeeById" parameterType="String" resultType="employee">
+		select * from employee
+		where emp_id=#{empId}
+	</select>
+	<insert id="insertAttachFile" parameterType="attachFile">
+		<selectKey keyProperty="atchFileNo" resultType="int"  order="BEFORE">
+			select seq_atch_file_no.nextval from dual
+		</selectKey>
+		insert into attach_file values(
+			#{atchFileNo},#{atchFileSeq},#{bizType},#{filePath},#{fileNm},#{fileSz},#{custId},sysdate,#{fileSavedNm},#{fileType}
+		)	
+	</insert>
+	<select id="selectAttachFile" parameterType="int" resultType="attachFile">
+		select * from attach_file
+		where atch_file_no=#{atchFileNo}
+	</select>
+</mapper>
