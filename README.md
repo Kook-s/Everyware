@@ -38,7 +38,8 @@ EveryWare는 기업 내 협업과 업무 효율을 극대화하기 위해 개발
 # 🏛️ Architecture
 ![3-Tire-Architecture](https://github.com/Kook-s/Everyware/blob/main/doc/3-Tire-Architecture.png)
 <br>
-### 패키지 구조
+
+## 패키지 구조
 ```
 ├── java
 │   └── kr
@@ -98,7 +99,7 @@ EveryWare는 기업 내 협업과 업무 효율을 극대화하기 위해 개발
         ├── jstree
         └── video
 ```
-
+<br>
 
 # 🗓️ 개발 기간 및 작업 시간
 | 2023    |   6월   |     |     |     | 7월 |||     | 8월 |     |     |    |
@@ -118,7 +119,7 @@ EveryWare는 기업 내 협업과 업무 효율을 극대화하기 위해 개발
 
 # 📑 Document
 ### **[최종 산출물](https://github.com/Kook-s/Everyware/blob/main/doc/document)**
-
+<br>
 
 # 🖥️ UI
 ![UI_01](https://github.com/Kook-s/Everyware/blob/main/doc/ui/01.png)
