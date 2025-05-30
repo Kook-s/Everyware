@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<!-- Tiles 설정 -->
+<tiles-definitions>
+	<!-- 판매 페이지 -->
+	<definition name="everyTemplate" template="/WEB-INF/views/everyframe/everyTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/everyframe/header.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/everyframe/footer.jsp"/>
+	</definition>
+	
+	<definition name="every/**" extends="everyTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/every/{1}.jsp"/>
+	</definition>
+		
+	<!-- 이용페이지 -->
+	<definition  name="everywareTemplate" template="/WEB-INF/views/everywareframe/everywareTemplate.jsp">
+	<put-attribute name="header" value="/WEB-INF/views/everywareframe/header.jsp"/>
+	<put-attribute name="aside" value="/WEB-INF/views/everywareframe/aside.jsp"/>
+	<put-attribute name="footer" value="/WEB-INF/views/everywareframe/footer.jsp"/>
+	</definition>
+	
+	<definition name="everyware/**" extends="everywareTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/everyware/{1}.jsp"/>
+	</definition>
+
+	<!-- 권한 페이지 -->
+	<definition  name="adminTemplate" template="/WEB-INF/views/adminframe/adminTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/adminframe/header.jsp"/>
+		<put-attribute name="aside" value="/WEB-INF/views/adminframe/aside.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/adminframe/footer.jsp"/>
+	</definition>
+
+	<definition name="admin/**" extends="adminTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/admin/{1}.jsp"/>
+	</definition>
+</tiles-definitions>

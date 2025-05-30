@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-config.dtd">
+  
+ <configuration>
+ 	<!--  
+ 		[마이바티스] 스프링에서 "_"를 사용한 컬럼명 사용시 (Book테이블의 book_id와 같이)
+ 		카멜케이스로 읽어주는 역할(bookId와 같이)
+ 		ex) 테이블 컬럼명이 member_id인 경우 jsp화면단에서 이 값을 사용시 memberId로 사용할 수 있다.
+ 	-->
+ 
+ 	<settings>
+ 		<setting name="mapUnderscoreToCamelCase" value="true"/>
+ 	</settings>
+ 	
+ 	<!-- 자주 사용하는 타입의 별칭을 셋팅 -->
+ 	<typeAliases>
+<!--        <typeAlias type="클래스명(패키지구조를 포함한)" alias="별칭 명"/> -->
+      <typeAlias type="kr.or.everyware.login.vo.AuthorityGroup" alias="authorityGroup"/>
+      <typeAlias type="kr.or.everyware.login.vo.Client" alias="client"/>
+      <typeAlias type="kr.or.everyware.login.vo.Employee" alias="employee"/>
+      <typeAlias type="kr.or.everyware.everyware.calendar.vo.Schedule" alias="schedule"/>
+      <typeAlias type="kr.or.everyware.everyware.calendar.vo.ScheduleMember" alias="scheduleMember"/>
+      <typeAlias type="kr.or.everyware.everyware.board.vo.BoardPaginationInfo" alias="boardPaging"/>
+      <typeAlias type="kr.or.everyware.everyware.cmnt.vo.CmntPaginationInfo" alias="cmntPaging"/>
+      <typeAlias type="kr.or.everyware.login.vo.LoginLog" alias="loginLog"/>
+      <typeAlias type="kr.or.everyware.everysolution.vo.WorkStatistic" alias="workStatistic"/>
+	  <typeAlias type="kr.or.everyware.admin.chat.vo.ImgChatLog" alias="imgChatLog"/>
+	  <typeAlias type="kr.or.everyware.admin.chat.vo.ChatLogPaging" alias="chatLogPaging"/>
+	  <typeAlias type="kr.or.everyware.admin.chat.vo.ChatLog" alias="chatLog"/>
+	  <typeAlias type="kr.or.everyware.admin.chat.vo.ImgChatLogPaging" alias="imgChatLogPaging"/>
+      <typeAlias type="kr.or.everyware.everysolution.vo.orderProduct" alias="orderProduct"/>
+      <typeAlias type="kr.or.everyware.everysolution.vo.Product" alias="product"/>
+      <typeAlias type="kr.or.everyware.everyware.chat.vo.Alarm" alias="alarm"/>
+      <typeAlias type="kr.or.everyware.login.vo.AuthMenu" alias="authMenu"/>
+      <typeAlias type="kr.or.everyware.everyware.mail.vo.MailList" alias="mailList"/>
+      <typeAlias type="kr.or.everyware.login.vo.Menu" alias="menu"/>
+      <typeAlias type="kr.or.everyware.everyware.mail.vo.EmailDetail" alias="emailDetail"/>
+      <typeAlias type="kr.or.everyware.everyware.mail.vo.Email" alias="email"/>
+      <typeAlias type="kr.or.everyware.everyware.mail.vo.MailPaging" alias="mailPaging"/>
+      <typeAlias type="kr.or.everyware.admin.mail.vo.MailPaging" alias="adminMailPaging"/>
+      <typeAlias type="kr.or.everyware.util.attachment.vo.AttachFile" alias="attachFile"/>
+      <typeAlias type="kr.or.everyware.everyware.chat.vo.Chatroom" alias="chatroom"/>
+      <typeAlias type="kr.or.everyware.everyware.chat.vo.ChatroomUser" alias="chatroomUser"/>
+      <typeAlias type="kr.or.everyware.everyware.chat.vo.Message" alias="message"/>
+      
+      <!-- contact -->
+      <typeAlias type="kr.or.everyware.everyware.contact.vo.Department" alias="dept"/>
+      <typeAlias type="kr.or.everyware.everyware.contact.vo.Position" alias="posi"/>
+      <typeAlias type="kr.or.everyware.everyware.contact.vo.Folder" alias="folder"/>
+      <typeAlias type="kr.or.everyware.everyware.contact.vo.AddressBook" alias="addrBook"/>
+      <typeAlias type="kr.or.everyware.everyware.contact.vo.ContactInCompany" alias="contactIn"/>
+      
+      <!-- document -->
+      <typeAlias type="kr.or.everyware.everyware.document.vo.Document" alias="doc"/>
+      <typeAlias type="kr.or.everyware.everyware.document.vo.ApprovalLine" alias="apprLine"/>
+      <typeAlias type="kr.or.everyware.everyware.document.vo.Proxy" alias="proxy"/>
+      <typeAlias type="kr.or.everyware.everyware.document.vo.Template" alias="template"/>
+      <typeAlias type="kr.or.everyware.everyware.document.vo.TemplateCategory" alias="templateCategory"/>
+      <typeAlias type="kr.or.everyware.admin.approval.vo.ApprovalConfig" alias="config"/>
+            
+      <!-- facility -->
+      <typeAlias type="kr.or.everyware.everyware.facility.vo.Car" alias="car"/>
+      <typeAlias type="kr.or.everyware.everyware.facility.vo.MeetingRoom" alias="mtgRoom"/>
+      <typeAlias type="kr.or.everyware.everyware.facility.vo.Reservation" alias="reservation"/>
+      <typeAlias type="kr.or.everyware.everyware.facility.vo.DrivingRecord" alias="drvRecord"/>
+      
+      <!-- cloud -->
+      <typeAlias type="kr.or.everyware.everyware.cloud.vo.OrderProduct" alias="cldOrderProduct"/>
+      
+      <!-- work -->
+      <typeAlias type="kr.or.everyware.everyware.work.vo.Work" alias="work"/>
+      <typeAlias type="kr.or.everyware.everyware.work.vo.PaginationInfo" alias="pagingVO"/>
+      <typeAlias type="kr.or.everyware.everyware.work.vo.WorkAdj" alias="workAdj"/>
+      
+      <typeAlias type="kr.or.everyware.everyware.board.vo.Board" alias="board"/>
+      <typeAlias type="kr.or.everyware.everyware.cmnt.vo.Cmnt" alias="cmnt"/>
+      <typeAlias type="kr.or.everyware.everyware.mypage.vo.MyPage" alias="mypage"/>
+      
+      <!-- suvy -->
+      <typeAlias type="kr.or.everyware.everyware.suvy.vo.Suvy" alias="suvy"/>
+      <typeAlias type="kr.or.everyware.everyware.suvy.vo.SuvyAnswer" alias="suvyAnswer"/>
+      <typeAlias type="kr.or.everyware.everyware.suvy.vo.SuvyItem" alias="suvyItem"/>
+      <typeAlias type="kr.or.everyware.everyware.suvy.vo.SuvyParticipants" alias="suvyParticipants"/>
+      <typeAlias type="kr.or.everyware.everyware.suvy.vo.SuvyPaging" alias="suvyPaging"/>
+      
+      <!-- vacation -->
+      <typeAlias type="kr.or.everyware.everyware.vacation.vo.Vacation" alias="vacation"/>
+      <typeAlias type="kr.or.everyware.everyware.vacation.vo.VacationPaging" alias="vacationPaging"/>
+      
+      <!-- todo -->
+      <typeAlias type="kr.or.everyware.everyware.todo.vo.Todo" alias="todo"/>
+      
+      <typeAlias type="kr.or.everyware.admin.workGroup.vo.WorkGroup" alias="workGroup"/>
+      <typeAlias type="kr.or.everyware.admin.workYear.vo.WorkYear" alias="workYear"/>
+      <typeAlias type="kr.or.everyware.admin.vacation.vo.VacItem" alias="vacItem"/>
+      <typeAlias type="kr.or.everyware.admin.work.vo.WorkAdmin" alias="workAdmin"/>
+      <typeAlias type="kr.or.everyware.admin.work.vo.WorkAdminPaging" alias="workAdminPaging"/>
+      
+    </typeAliases>
+ </configuration>

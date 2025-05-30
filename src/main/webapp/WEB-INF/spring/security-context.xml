@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+	<bean id="customAccessDenied" class="kr.or.everyware.security.CustomAccessDeniedHandler"></bean>
+	<bean id="customLoginSuccess" class="kr.or.everyware.security.CustomLoginSuccessHandler"></bean>
+	<!-- 사용자가 정의한 비밀번호 암호화 처리기를 빈으로 등록 -->
+	<bean id="customPasswordEncoder" class="kr.or.everyware.security.CustomNoOpPasswordEncoder"></bean>
+	<!-- 스프링 시큐리티에서 제공하는 BCryptPasswordEncoder 클래스를 자바빈으로 등록 -->
+	<bean id="bcryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"></bean>
+	<!-- 사용자 정의 사용자 상세 기능 -->
+	<bean id="customUserDetailsServiceClient" class="kr.or.everyware.security.CustomUserDetailsServiceClient"></bean>
+	<bean id="customUserDetailsServiceEmployee" class="kr.or.everyware.security.CustomUserDetailsServiceEmployee"></bean>
+	<bean id="everySolutionLogoutSuccessHandler" class="kr.or.everyware.security.EverySolutionLogoutSuccessHandler"></bean>
+	
+	
+	<security:http pattern="/everysolution/**" authentication-manager-ref="clientManager">
+		<security:form-login login-page="/everysolution/login" login-processing-url="/everysolution/login"/>
+		<security:access-denied-handler ref="customAccessDenied"/>
+		<security:logout success-handler-ref="everySolutionLogoutSuccessHandler" logout-url="/everysolution/logout" invalidate-session="true" delete-cookies="remember-me, JSESSION_ID"/>
+	</security:http>
+	<security:http pattern="/everyware/**" authentication-manager-ref="employeeManager">
+		<security:form-login login-page="/everyware/login" login-processing-url="/everyware/login" authentication-success-handler-ref="customLoginSuccess"/>
+		<security:logout logout-url="/everyware/logout" invalidate-session="true" delete-cookies="remember-me, JSESSION_ID"/>
+		
+		<security:access-denied-handler ref="customAccessDenied"/>
+	</security:http>
+	
+
+	<security:authentication-manager id="clientManager">
+		<security:authentication-provider user-service-ref="customUserDetailsServiceClient">		
+			<security:password-encoder ref="customPasswordEncoder"/>
+		</security:authentication-provider>
+	</security:authentication-manager>
+	<security:authentication-manager id="employeeManager">
+		<security:authentication-provider user-service-ref="customUserDetailsServiceEmployee">		
+			<security:password-encoder ref="customPasswordEncoder"/>
+		</security:authentication-provider>
+	</security:authentication-manager>
+</beans>
