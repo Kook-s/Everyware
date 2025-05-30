@@ -1,0 +1,50 @@
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# Build artifacts
+target/
+build/
+*.jar
+*.war
+*.class
+*.log
+
+# Maven
+.m2/
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+**/build/
+**/out/
+**/bin/
+.gradletasknamecache
+gradle-app.setting
+
+# Logs
+logs/
+*.log
+
+# Environment variables
+.env
+*.properties
+*.yml
+*.yaml
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Spring Boot-specific files
+###STS###
+.apt_generated
+.springBeans
+.factorypath
+
