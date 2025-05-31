@@ -171,7 +171,7 @@
 <script src="${pageContext.request.contextPath }/resources/assets/js/plugins/anime.min.js" type="text/javascript"></script>
 <!-- Control Center for Material UI Kit: parallax effects, scripts for the example pages etc -->
 <!--  Google Maps Plugin    -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTTfWur0PDbZWPr7Pmq8K3jiDp0_xUziI"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key="></script>
 <script src="${pageContext.request.contextPath }/resources/assets/js/material-kit-pro.min.js?v=3.0.3" type="text/javascript"></script>
 </body>
 
