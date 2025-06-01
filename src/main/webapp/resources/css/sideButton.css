@@ -1,0 +1,171 @@
+*{
+    margin: 0%;
+    padding: 0%;
+    box-sizing: border-box;
+}
+
+.sideHomeBtn{
+    /* background: blue; */
+    background: blue;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    position: fixed;
+    right: 1%;
+    bottom: 2%;
+
+    font-size: 30px;
+    font-weight: bold;
+    
+    border-radius: 100px;
+    color: white;
+    z-index: 999;
+}
+
+.sideHomeBtn:hover{
+    background: rgb(255, 255, 255);
+    color: blue;
+
+}
+
+.sideMsg{
+ background: grey;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    position: fixed;
+    right: 1%;
+    bottom: 2%;
+
+    font-size: 30px;
+    font-weight: bold;
+    border-radius: 100px;
+    color: white;
+    z-index: 998;
+     animation: animate-sideMsg 0.5s ;
+}
+@keyframes animate-sideMsg{
+    0%{
+    bottom: 8%;
+    }
+100%{
+    bottom: 2%;
+    }
+}
+
+
+.sideZoom{
+ background: grey;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    position: fixed;
+    right: 1%;
+    bottom: 2%;
+
+    font-size: 30px;
+    font-weight: bold;
+    
+    border-radius: 100px;
+    color: white;
+    z-index: 997;
+     animation: animate-sideZoom 0.5s ;
+}
+@keyframes animate-sideZoom{
+    0%{
+    bottom: 14%;
+    }
+100%{
+    bottom: 2%;
+    }
+}
+
+
+.sideAdmin{
+ background: grey;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    position: fixed;
+    right: 1%;
+    bottom: 2%;
+
+    font-size: 30px;
+    font-weight: bold;
+    
+    border-radius: 100px;
+    color: white;
+    z-index: 996;
+     animation: animate-sideAdmin 0.5s ;
+}
+@keyframes animate-sideAdmin{
+    0%{
+    bottom: 20%;
+    }
+100%{
+    bottom: 2%;
+    }
+}
+
+.sideMsg.sideActive{
+    bottom: 8%;
+  animation: animate-sideMsgs 0.5s ;
+}
+@keyframes animate-sideMsgs{
+    0%{
+    bottom: 2%;
+    }
+100%{
+    bottom: 8%;
+    }
+}
+
+.sideZoom.sideActive{
+    bottom: 14%;
+  animation: animate-sideZooms 0.5s ;
+}
+@keyframes animate-sideZooms{
+    0%{
+    bottom: 2%;
+    }
+100%{
+    bottom: 14%;
+    }
+}
+
+.sideZoom.sideActive{
+    bottom: 14%;
+  animation: animate-sideZooms 0.5s ;
+}
+@keyframes animate-sideZooms{
+    0%{
+    bottom: 2%;
+    }
+100%{
+    bottom: 14%;
+    }
+}
+.sideAdmin.sideActive{
+    bottom: 20%;
+  animation: animate-sideAdmins 0.5s ;
+}
+@keyframes animate-sideAdmins{
+    0%{
+    bottom: 2%;
+    }
+100%{
+    bottom: 20%;
+    }
+}

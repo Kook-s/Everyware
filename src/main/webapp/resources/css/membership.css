@@ -1,0 +1,399 @@
+*{
+    font-family: 'Noto Sans KR', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;  
+}
+body{
+    background: black;
+    /* overflow: hidden; */
+   height: 180vh;
+}
+
+.header{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      color: white;
+      z-index: 999;
+      /* background: red; */
+      width: 100%;
+      height: 90px;
+      padding: 0 20px;
+      font-size: 32px;
+      font: bold;
+}
+.header nav{
+    z-index: 1000;
+}
+.scroll_evnet {
+  padding-top: 80px;
+  position: fixed;
+  top: 80%;
+  left: 50%;
+  z-index: 100;
+  color: #fff;
+  }
+  .scroll_evnet span {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin-left: -12px;
+  border-left: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  -webkit-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+  -webkit-animation: sdb 2s infinite;
+  animation: sdb 2s infinite;
+  opacity: 0;
+  box-sizing: border-box;
+  }
+.scroll_evnet span:nth-of-type(1) {
+  -webkit-animation-delay: 0s;
+  animation-delay: 0s;
+  }
+  .scroll_evnet span:nth-of-type(2) {
+  top: 16px;
+  -webkit-animation-delay: .15s;
+  animation-delay: .15s;
+  }
+  .scroll_evnet span:nth-of-type(3) {
+  top: 32px;
+  -webkit-animation-delay: .3s;
+  animation-delay: .3s;
+  }
+  @-webkit-keyframes sdb {
+  0% {
+      opacity: 0;
+  }
+  50% {
+      opacity: 1;
+  }
+  100% {
+      opacity: 0;
+  }
+  }
+  @keyframes sdb {
+  0% {
+      opacity: 0;
+  }
+  50% {
+      opacity: 1;
+  }
+  100% {
+      opacity: 0;
+  }
+  }  
+
+
+.total_menu{
+    position: absolute;
+    left: 0%;
+    bottom: 0%;
+    width: 100%;
+    height: 100vh;
+    background: black;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    /* z-index: 100; */
+}
+
+.menu{ 
+    text-decoration: none;
+    font-size: 68px;
+    color: white;
+    font-weight: bold;
+    text-transform:uppercase; 
+}
+
+.menu:after {
+    display:block;
+    content: '';
+    border-bottom: solid 3px #fff;  
+    transform: scaleX(0);  
+    transition: transform 250ms ease-in-out;
+}
+
+#menu1:hover .menu:after { 
+    transform: scaleX(1); 
+}
+#menu2:hover .menu:after { 
+  transform: scaleX(1); 
+}
+#menu3:hover .menu:after { 
+  transform: scaleX(1); 
+}
+#menu4:hover .menu:after { 
+  transform: scaleX(1); 
+}
+.menu_2{
+    display: none;
+  }
+.menu_2.active{
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px ;
+  
+  animation: animate-img_cover4active 1.5s ;
+}
+ @keyframes animate-img_cover4active{
+     0%{
+    opacity: 0%;
+     }
+    100%{
+      opacity: 100%;
+     }
+   }
+.menu_2 a{
+    font-size: 21px;
+    margin: 0 15px;
+}
+.menus{ 
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    text-transform:uppercase; 
+}
+
+.menus:after {
+    display:block;
+    content: '';
+    /* border-bottom: solid 3px #2bb3e4;   */
+    border-bottom: solid 3px #66c5e7;  
+    transform: scaleX(0);  
+    transition: transform 250ms ease-in-out;
+}
+.menus:hover:after { 
+    transform: scaleX(1); 
+}
+
+.bott{
+  position: absolute;
+  bottom:2%;
+  color: #858585;
+}
+
+.leftmenu{
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  /* align-items: center; */
+  justify-content: center;
+  left: 2%;
+  font-size: 32px;
+}
+/*여기까지 header */
+
+.wrapper{
+  /* background: red; */
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  position: absolute;
+  justify-content: center;
+}
+
+
+.container{
+  /* background: yellow; */
+  width: 90%;
+  height: 100%;
+  background: black;
+  position: absolute;
+  top: 25%;
+  left: 7%;
+  display: flex;
+  /* align-items: center; */
+  padding-top: 5%;
+}
+
+.container-title{
+  font-size: 82px;
+  position: absolute;
+  top: -13%;
+  color: white;
+  z-index: -1;
+  animation: animate-title 1s ;
+  z-index: 900;
+}
+
+@keyframes animate-title{
+    0%{
+        top: 0%;
+    }
+    100%{
+    }
+  }
+.container-titles{
+  color: white;
+}
+
+.basic{
+  width: 35%;
+  height: 60%;
+  background: rgb(106, 165, 28);
+  margin-right: 5%;
+  color:#fff;
+  font-size: 24px;
+  padding:1% 1%;
+  position: absolute;
+  /* left: 5%; */
+  top: 10%;
+}
+.basic h1{
+   text-align: right;
+}
+.openBasicBtn{
+  position: absolute;
+  bottom: 5%;
+  right: 5%;
+  font-size: 54px;
+  font-weight: bold;
+}
+/* .openBasicBuy{
+   position: absolute;
+   top: 10%;
+    width: 35%;
+    height: 60%;
+   background: rgba(255, 255, 255, 0.7);
+   left: 35%;
+   border-top-right-radius: 15px;
+   border-bottom-right-radius: 15px;
+   z-index: 10;
+  } */
+
+.basic-out{
+  position: absolute;
+  bottom: 0%;
+  right: -90%;
+  font-size: 52px;
+  z-index: 1;
+}
+.basic-out2{
+  position: absolute;
+  bottom: 3%;
+  /* right: -25%; */
+  font-size: 22px;
+}
+.pri-out{
+  position: absolute;
+  bottom: 0%;
+  left: -90%;
+  font-size: 52px;
+  text-align: right;
+}
+.pri-out2{
+  position: absolute;
+  bottom: 3%;
+  /* right: -25%; */
+  font-size: 24px;
+  font-weight: bold;
+  
+}
+
+.pri{
+  width: 35%;
+  height: 60%;
+  background: rgb(227, 53, 0);
+  margin-right: 5%;
+  color:#fff;
+  font-size: 24px;
+  padding:1% 1%;
+  position: absolute;
+  right: 15%;
+  top: 85%;
+}
+
+
+
+
+.rightfont1{
+  color: white;
+  font-size: 81px;
+  position: fixed;
+  right: 3%;
+  top: 35%;
+  -webkit-transform: rotate(270deg);
+  animation: animate-rightfont1 1s ;
+}
+
+@keyframes animate-rightfont1{
+    0%{
+        top: 0%;
+    }
+    100%{
+    }
+  }
+.rightfont2{
+  color: white;
+  font-size: 81px;
+  position: fixed;
+  right: -10%;
+  top: 63%;
+  -webkit-transform: rotate(270deg);
+ animation: animate-rightfont2 1s ;
+}
+
+@keyframes animate-rightfont2{
+    0%{
+        top: 100%;
+    }
+    100%{
+    }
+  }
+.rightfont3{
+  color: white;
+  font-size: 81px;
+  position: fixed;
+  right: 1%;
+  top: 13%;
+  -webkit-transform: rotate(270deg);
+ animation: animate-rightfont3 1s ;
+}
+
+@keyframes animate-rightfont3{
+    0%{
+        top: 100%;
+    }
+    100%{
+    }
+  }
+
+.leftline{
+  display: inline-block;
+  line-height: 50%;
+  position: absolute;
+  top:50%;
+  right: 100%;
+  width: 100vh;
+    height: 5px;
+   background: #fff;
+   border: none;
+}
+
+.rightline{
+  display: inline-block;
+  line-height: 50%;
+  position: absolute;
+  top:50%;
+  left: 100%;
+  width: 100vh;
+   height: 5px;
+   background: #fff;
+   border: none;
+}
+
+
+
+
+
+
+
+
+
