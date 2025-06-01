@@ -127,6 +127,10 @@ EveryWare는 기업 내 협업과 업무 효율을 극대화하기 위해 개발
 ![UI_03](https://github.com/Kook-s/Everyware/blob/main/doc/ui/03.png)
 ![UI_04](https://github.com/Kook-s/Everyware/blob/main/doc/ui/04.png)
 ![UI_05](https://github.com/Kook-s/Everyware/blob/main/doc/ui/05.png)
+![UI_06](https://github.com/Kook-s/Everyware/blob/main/doc/ui/06.png)
+![UI_07](https://github.com/Kook-s/Everyware/blob/main/doc/ui/07.png)
+![UI_08](https://github.com/Kook-s/Everyware/blob/main/doc/ui/08.png)
+![UI_09](https://github.com/Kook-s/Everyware/blob/main/doc/ui/09.png)
 
 
 
